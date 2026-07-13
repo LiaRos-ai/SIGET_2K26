@@ -20,6 +20,24 @@ Este repositorio contiene únicamente el **arranque del proyecto**:
 Las carpetas `service/`, `repository/` y `model/` están vacías a propósito
 (solo tienen un `.gitkeep`): se irán llenando desde el Día 2 en adelante.
 
+## Estado actual: Sprint 0 (Día 2) — Anotaciones y capas
+
+Novedades del Día 2 respecto del Día 1:
+
+- Se agregó el modelo `Tarea` (POJO simple, sin JPA todavía).
+- Se agregó la capa `repository` con `TareaRepository` (interfaz) y
+  `TareaRepositoryEnMemoria` (implementación @Repository en memoria —
+  los datos se pierden al reiniciar; eso se resuelve el Día 7 con JPA).
+- Se agregó la capa `service` con `TareaService` (@Service), que recibe el
+  repositorio por inyección de dependencias en el constructor (@Autowired).
+- Se agregó `TareaController` (@Controller) en `/tareas`, que demuestra el
+  recorrido completo Controller → Service → Repository. La respuesta es
+  texto plano temporal (@ResponseBody); se reemplaza por una vista
+  Thymeleaf real el Día 3.
+- Se agregó `DataInitializer` (CommandLineRunner) que precarga 3 tareas de
+  ejemplo al arrancar, para poder ver algo en `/tareas` sin necesidad de
+  formularios todavía.
+
 ## Cómo ejecutar
 
 ```bash
