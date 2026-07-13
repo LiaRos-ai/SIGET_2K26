@@ -38,6 +38,27 @@ Novedades del Día 2 respecto del Día 1:
   ejemplo al arrancar, para poder ver algo en `/tareas` sin necesidad de
   formularios todavía.
 
+## Estado actual: Sprint 1 (Día 3) — Vistas con Thymeleaf
+
+Novedades del Día 3 respecto del Día 2:
+
+- El endpoint `/tareas` ya NO devuelve texto plano: `TareaController` ahora
+  llena un `Model` y delega el renderizado a `templates/tareas.html`, que
+  usa `th:each` para recorrer la lista, y `th:if` / `th:unless` para
+  mostrar el estado (completada/pendiente) y el mensaje de lista vacía.
+- Se agregó `GET /tareas/{id}` (`@PathVariable`) con dos vistas nuevas:
+  `tarea-detalle.html` (si la tarea existe) y `tarea-no-encontrada.html`
+  (si el `Optional` viene vacío).
+- Se agregó `TareaService.buscarPorId(id)`.
+- `inicio.html` (Día 1) ahora enlaza al listado de tareas.
+- Todas las vistas usan Bootstrap (vía CDN) para un estilo responsive
+  mínimo, aunque el layout con `th:fragment` / `th:replace` recién se
+  construye el Día 4.
+
+- `http://localhost:8080/` → página de verificación (Día 1), con enlace al listado.
+- `http://localhost:8080/tareas` → listado real con Thymeleaf (Día 3).
+- `http://localhost:8080/tareas/1` → detalle de una tarea (probar también con un id que no exista, ej. `/tareas/99`).
+
 ## Cómo ejecutar
 
 ```bash

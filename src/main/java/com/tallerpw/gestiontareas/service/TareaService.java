@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Capa Service: contiene las reglas de negocio y coordina el acceso a
@@ -29,6 +30,10 @@ public class TareaService {
 
     public List<Tarea> listarTodas() {
         return tareaRepository.findAll();
+    }
+
+    public Optional<Tarea> buscarPorId(Long id) {
+        return tareaRepository.findById(id);
     }
 
     public Tarea crear(String titulo) {
