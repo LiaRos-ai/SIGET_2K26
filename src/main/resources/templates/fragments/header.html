@@ -1,0 +1,18 @@
+<!-- Fragmento reutilizable: barra de navegación.
+     Se incluye en cada página con:
+     <div th:replace="~{fragments/header :: header}"></div>
+     th:replace SUSTITUYE por completo la etiqueta anfitriona (el <div>
+     de arriba desaparece; queda directamente el <nav> de este archivo). -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <nav th:fragment="header" class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Sistema de Gestión de Tareas</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/">Inicio</a>
+                <a class="nav-link" href="/tareas">Tareas</a>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>

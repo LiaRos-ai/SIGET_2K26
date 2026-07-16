@@ -1,0 +1,16 @@
+<!-- Fragmento parametrizado: aviso reutilizable con un mensaje variable.
+     Se usa con th:insert, que a diferencia de th:replace, MANTIENE la
+     etiqueta anfitriona y coloca el contenido del fragmento adentro:
+
+     <div class="mi-clase" th:insert="~{fragments/aviso :: aviso('Texto...')}"></div>
+
+     El resultado conserva el <div class="mi-clase"> y agrega el <p> de
+     abajo como hijo. Con th:replace, en cambio, el <div> desaparecería
+     y solo quedaría el <p>. -->
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <p th:fragment="aviso(mensaje)" class="alert alert-info mb-4" th:text="${mensaje}">
+        Mensaje de aviso
+    </p>
+</body>
+</html>
