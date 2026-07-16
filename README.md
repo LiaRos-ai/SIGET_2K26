@@ -55,6 +55,26 @@ Novedades del Día 3 respecto del Día 2:
   mínimo, aunque el layout con `th:fragment` / `th:replace` recién se
   construye el Día 4.
 
+## Estado actual: Sprint 1 (Día 4) — Bootstrap, layouts y diseño responsive
+
+Novedades del Día 4 respecto del Día 3:
+
+- Se agregó `templates/fragments/header.html` (barra de navegación) y
+  `templates/fragments/footer.html`, incluidos en todas las páginas con
+  `th:replace="~{fragments/header :: header}"` — el `<div>` anfitrión
+  desaparece y queda directamente el `<nav>`/`<footer>` del fragmento.
+- Se agregó `templates/fragments/aviso.html`, un fragmento **parametrizado**
+  (`th:fragment="aviso(mensaje)"`) incluido con `th:insert` en `tareas.html`
+  — a diferencia de `th:replace`, el `<div>` anfitrión se conserva y el
+  contenido del fragmento queda adentro.
+- Todas las vistas (`inicio.html`, `tareas.html`, `tarea-detalle.html`,
+  `tarea-no-encontrada.html`) se reescribieron para usar estos fragments,
+  eliminando la duplicación de HTML.
+- Se agregó diseño responsive real con clases de Bootstrap:
+  `row-cols-1 row-cols-md-2 row-cols-lg-3` en el listado (1 columna en
+  celular, 2 en tablet, 3 en escritorio) y `col-12 col-md-6` en las
+  tarjetas de una sola columna.
+
 - `http://localhost:8080/` → página de verificación (Día 1), con enlace al listado.
 - `http://localhost:8080/tareas` → listado real con Thymeleaf (Día 3).
 - `http://localhost:8080/tareas/1` → detalle de una tarea (probar también con un id que no exista, ej. `/tareas/99`).
@@ -62,6 +82,7 @@ Novedades del Día 3 respecto del Día 2:
 ## Cómo ejecutar
 
 ```bash
+mvn clean
 mvn spring-boot:run
 ```
 
@@ -70,25 +91,25 @@ Luego abrir `http://localhost:8080/` — debe mostrar la tarjeta de verificació
 
 Si el puerto 8080 está ocupado, cambiar `server.port` en `application.properties`.
 
-## Product Backlog inicial (Sprint 0 — construido en clase el Día 1)
+## Product Backlog (actualizado — Sprint 1, cierre Día 4)
 
-Historias de usuario de referencia para arrancar el tablero Scrum/Kanban del
-proyecto guía. El docente las escribe/discute en vivo con el curso (rol Product Owner);
-el número de Historia y la prioridad pueden ajustarse según lo que surja en el Planning.
+| # | Historia de usuario | Prioridad | Sprint estimado | Estado |
+|---|---|---|---|---|
+| HU-01 | Como usuario quiero ver una página de inicio para confirmar que la app funciona | Alta | Sprint 0 | Hecho (Día 1) |
+| HU-02 | Como usuario quiero ver un listado de tareas para saber qué pendientes existen | Alta | Sprint 1 | Hecho (Día 3) |
+| HU-03 | Como usuario quiero crear una tarea nueva desde un formulario | Alta | Sprint 1 | Backlog (Día 5) |
+| HU-04 | Como usuario quiero editar y eliminar una tarea existente | Alta | Sprint 1-2 | Backlog |
+| HU-05 | Como usuario quiero que las tareas se guarden en base de datos (no en memoria) | Alta | Sprint 2 | Backlog |
+| HU-06 | Como usuario quiero registrarme e iniciar sesión para tener mis propias tareas | Alta | Sprint 2 | Backlog |
+| HU-07 | Como administrador quiero ver las tareas de todos los usuarios | Media | Sprint 2 | Backlog |
+| HU-08 | Como usuario quiero marcar una tarea como completada y filtrar por estado | Media | Sprint 2 | Backlog |
+| HU-09 | Como sistema quiero exponer un endpoint REST de tareas para integraciones externas | Alta | Sprint 3 | Backlog |
+| HU-10 | Como usuario quiero que mis datos estén protegidos (validaciones, XSS, transacciones) | Alta | Sprint 3 | Backlog |
+| HU-11 | Como equipo queremos empaquetar y desplegar la aplicación como JAR ejecutable | Alta | Sprint 3 | Backlog |
 
-| # | Historia de usuario | Prioridad | Sprint estimado |
-|---|---|---|---|
-| HU-01 | Como usuario quiero ver una página de inicio para confirmar que la app funciona | Alta | Sprint 0 |
-| HU-02 | Como usuario quiero ver un listado de tareas para saber qué pendientes existen | Alta | Sprint 1 |
-| HU-03 | Como usuario quiero crear una tarea nueva desde un formulario | Alta | Sprint 1 |
-| HU-04 | Como usuario quiero editar y eliminar una tarea existente | Alta | Sprint 1-2 |
-| HU-05 | Como usuario quiero que las tareas se guarden en base de datos (no en memoria) | Alta | Sprint 2 |
-| HU-06 | Como usuario quiero registrarme e iniciar sesión para tener mis propias tareas | Alta | Sprint 2 |
-| HU-07 | Como administrador quiero ver las tareas de todos los usuarios | Media | Sprint 2 |
-| HU-08 | Como usuario quiero marcar una tarea como completada y filtrar por estado | Media | Sprint 2 |
-| HU-09 | Como sistema quiero exponer un endpoint REST de tareas para integraciones externas | Alta | Sprint 3 |
-| HU-10 | Como usuario quiero que mis datos estén protegidos (validaciones, XSS, transacciones) | Alta | Sprint 3 |
-| HU-11 | Como equipo queremos empaquetar y desplegar la aplicación como JAR ejecutable | Alta | Sprint 3 |
+Nota: HU-02 ya incluye ahora el diseño responsive (Día 4), así que se considera
+totalmente cerrada. No se agrega una historia nueva para "responsive" porque
+formaba parte del criterio de aceptación original.
 
 ## Tablero Scrum/Kanban
 
