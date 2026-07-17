@@ -2,11 +2,15 @@ package com.tallerpw.gestiontareas.controller;
 
 import com.tallerpw.gestiontareas.model.Tarea;
 import com.tallerpw.gestiontareas.service.TareaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -18,6 +22,10 @@ import java.util.List;
  * respuesta; solo llena el Model con los datos y delega el renderizado
  * a la plantilla HTML (separación de responsabilidades: el Controller no
  * debería tener HTML mezclado en el código Java).
+ *
+ * Día 5: se agrega el formulario de creación (GET /tareas/nueva y
+ * POST /tareas), con binding por th:object/th:field y validación con
+ * @Valid + BindingResult.
  */
 @Controller
 public class TareaController {
@@ -55,6 +63,34 @@ public class TareaController {
                     return "tarea-detalle";
                 })
                 .orElse("tarea-no-encontrada");
+    }
+
+    /**
+     * Muestra el formulario vacío. El objeto "tarea" que se agrega al
+     * Model es el mismo que la vista usa con th:object="${tarea}" para
+     * bindear cada campo con th:field.
+     */
+    @GetMapping("/tareas/nueva")
+    public String formularioNuevaTarea(Model model) {
+        model.addAttribute("tarea", new Tarea());
+        return "tarea-form";
+    }
+
+    /**
+     * Recibe el formulario. @Valid le pide a Spring que aplique las
+     * anotaciones de Bean Validation declaradas en Tarea (@NotBlank,
+     * @Size). BindingResult DEBE ir inmediatamente después del objeto
+     * validado: ahí quedan los errores en vez de lanzar una excepción.
+     */
+    @PostMapping("/tareas")
+    public String crear(@Valid @ModelAttribute("tarea") Tarea tarea, BindingResult resultado, Model model) {
+        if (resultado.hasErrors()) {
+            // Vuelve al mismo formulario; Thymeleaf muestra los errores
+            // junto a cada campo gracias a th:errors.
+            return "tarea-form";
+        }
+        tareaService.crear(tarea);
+        return "redirect:/tareas";
     }
 
 }
