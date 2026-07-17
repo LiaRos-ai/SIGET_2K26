@@ -41,4 +41,16 @@ public class TareaService {
         return tareaRepository.save(nueva);
     }
 
+    /**
+     * Día 5: usado por el formulario de creación. Recibe el objeto Tarea
+     * ya validado por el Controller (con @Valid) y se asegura de guardarlo
+     * como una tarea nueva (sin completar), sin importar qué haya llegado
+     * en esos campos desde el formulario.
+     */
+    public Tarea crear(Tarea tarea) {
+        tarea.setId(null);
+        tarea.setCompletada(false);
+        return tareaRepository.save(tarea);
+    }
+
 }

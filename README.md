@@ -75,6 +75,23 @@ Novedades del Día 4 respecto del Día 3:
   celular, 2 en tablet, 3 en escritorio) y `col-12 col-md-6` en las
   tarjetas de una sola columna.
 
+## Estado actual: Sprint 1 (Día 5) — Formularios y validación · CIERRE DE SPRINT 1
+
+Novedades del Día 5 respecto del Día 4:
+
+- Se agregaron anotaciones de Bean Validation a `Tarea`: `@NotBlank` y
+  `@Size(min = 3, max = 100)` sobre `titulo`.
+- Se agregó `GET /tareas/nueva` (muestra el formulario vacío) y
+  `POST /tareas` (recibe el formulario) en `TareaController`.
+- El método `crear` del Controller usa `@Valid` + `BindingResult`: si hay
+  errores de validación, vuelve a mostrar el mismo formulario con los
+  mensajes de error junto a cada campo (`th:errors`); si todo es válido,
+  guarda la tarea y redirige a `/tareas` (`redirect:/tareas`).
+- Nueva vista `tarea-form.html` con `th:object="${tarea}"` y
+  `th:field="*{titulo}"` para el binding, más `th:errors="*{titulo}"`
+  para mostrar el mensaje de validación.
+- El listado (`tareas.html`) ahora tiene un botón "+ Nueva tarea".
+
 - `http://localhost:8080/` → página de verificación (Día 1), con enlace al listado.
 - `http://localhost:8080/tareas` → listado real con Thymeleaf (Día 3).
 - `http://localhost:8080/tareas/1` → detalle de una tarea (probar también con un id que no exista, ej. `/tareas/99`).
@@ -91,42 +108,38 @@ Luego abrir `http://localhost:8080/` — debe mostrar la tarjeta de verificació
 
 Si el puerto 8080 está ocupado, cambiar `server.port` en `application.properties`.
 
-## Product Backlog (actualizado — Sprint 1, cierre Día 4)
+## Product Backlog (actualizado — cierre de Sprint 1, Día 5)
 
 | # | Historia de usuario | Prioridad | Sprint estimado | Estado |
 |---|---|---|---|---|
 | HU-01 | Como usuario quiero ver una página de inicio para confirmar que la app funciona | Alta | Sprint 0 | Hecho (Día 1) |
-| HU-02 | Como usuario quiero ver un listado de tareas para saber qué pendientes existen | Alta | Sprint 1 | Hecho (Día 3) |
-| HU-03 | Como usuario quiero crear una tarea nueva desde un formulario | Alta | Sprint 1 | Backlog (Día 5) |
-| HU-04 | Como usuario quiero editar y eliminar una tarea existente | Alta | Sprint 1-2 | Backlog |
-| HU-05 | Como usuario quiero que las tareas se guarden en base de datos (no en memoria) | Alta | Sprint 2 | Backlog |
-| HU-06 | Como usuario quiero registrarme e iniciar sesión para tener mis propias tareas | Alta | Sprint 2 | Backlog |
+| HU-02 | Como usuario quiero ver un listado de tareas para saber qué pendientes existen | Alta | Sprint 1 | Hecho (Día 3-4) |
+| HU-03 | Como usuario quiero crear una tarea nueva desde un formulario | Alta | Sprint 1 | Hecho (Día 5) |
+| HU-04 | Como usuario quiero editar y eliminar una tarea existente | Alta | Sprint 1-2 | Movida a Sprint 2 (Día 8, CRUD completo) |
+| HU-05 | Como usuario quiero que las tareas se guarden en base de datos (no en memoria) | Alta | Sprint 2 | Backlog (Día 7) |
+| HU-06 | Como usuario quiero registrarme e iniciar sesión para tener mis propias tareas | Alta | Sprint 2 | Backlog (Día 9) |
 | HU-07 | Como administrador quiero ver las tareas de todos los usuarios | Media | Sprint 2 | Backlog |
 | HU-08 | Como usuario quiero marcar una tarea como completada y filtrar por estado | Media | Sprint 2 | Backlog |
 | HU-09 | Como sistema quiero exponer un endpoint REST de tareas para integraciones externas | Alta | Sprint 3 | Backlog |
-| HU-10 | Como usuario quiero que mis datos estén protegidos (validaciones, XSS, transacciones) | Alta | Sprint 3 | Backlog |
+| HU-10 | Como usuario quiero que mis datos estén protegidos (validaciones, XSS, transacciones) | Alta | Sprint 3 | Backlog (parcialmente iniciada: validación de formularios) |
 | HU-11 | Como equipo queremos empaquetar y desplegar la aplicación como JAR ejecutable | Alta | Sprint 3 | Backlog |
 
-Nota: HU-02 ya incluye ahora el diseño responsive (Día 4), así que se considera
-totalmente cerrada. No se agrega una historia nueva para "responsive" porque
-formaba parte del criterio de aceptación original.
+**Sprint 1 cerrado.** Incremento entregado: proyecto Spring Boot con vistas Thymeleaf,
+layout con fragments, diseño responsive, y formulario de creación con validación
+(coincide con el incremento planeado para el Sprint 1 en el plan de curso).
 
-## Tablero Scrum/Kanban
+## Sprint Review y Retrospectiva 1 (actividad del Día 5)
 
-Columnas sugeridas: `Backlog` · `Sprint Backlog` · `En progreso` · `En revisión` · `Hecho`.
-Usar Trello, GitHub Projects o un tablero físico — lo importante es que se actualice
-en el Daily de 5 minutos al inicio de cada sesión.
+- **Sprint Review:** cada estudiante/equipo muestra su proyecto de práctica
+  corriendo, con el listado, el detalle y el formulario de creación funcionando.
+- **Retrospectiva:** responder en equipo — ¿qué funcionó bien esta semana?
+  ¿qué fue difícil? ¿qué cambiaríamos para la semana 2? (ver plantilla en el
+  documento "Guía de Bootstrap y Fragments" o en el plan de sesión del Día 5).
 
-## Roles Scrum del curso
+## Elección de proyecto (actividad del Día 5)
 
-- **Product Owner / Scrum Master:** el docente.
-- **Equipo de desarrollo:** los estudiantes (tanto en este proyecto guía, de forma
-  colectiva/observada, como en sus proyectos propios, en equipos).
-
-## Próximos hitos
-
-- **Día 2:** anotaciones y capas (`@Controller`, `@Service`, `@Repository`), repo Git
-  del proyecto guía.
-- **Día 3-4:** vistas Thymeleaf + Bootstrap.
-- **Día 5:** formularios + validación, cierre de Sprint 1, elección de proyecto
-  por parte de los estudiantes.
+Al cierre de esta sesión, cada estudiante/equipo elige 1 de los 5 proyectos
+propuestos (ver "Guía General para los 5 Proyectos de Estudiantes") y lo
+declara formalmente completando la Ficha de Selección de Proyecto y Equipo.
+A partir del Día 6 el proyecto guía del docente y los proyectos propios
+avanzan en paralelo.
