@@ -32,6 +32,19 @@ public class TareaService {
         return tareaRepository.findAll();
     }
 
+    /**
+     * Día 6: usado por GET /tareas?completada=true|false. Si el parámetro
+     * viene vacío (null), no se filtra nada y se devuelven todas.
+     */
+    public List<Tarea> listarFiltradas(Boolean completada) {
+        if (completada == null) {
+            return tareaRepository.findAll();
+        }
+        return tareaRepository.findAll().stream()
+                .filter(t -> t.isCompletada() == completada)
+                .toList();
+    }
+
     public Optional<Tarea> buscarPorId(Long id) {
         return tareaRepository.findById(id);
     }
@@ -42,15 +55,15 @@ public class TareaService {
     }
 
     /**
-     * Día 5: usado por el formulario de creación. Recibe el objeto Tarea
-     * ya validado por el Controller (con @Valid) y se asegura de guardarlo
-     * como una tarea nueva (sin completar), sin importar qué haya llegado
-     * en esos campos desde el formulario.
+     * Día 6: alterna el estado completada/pendiente de una tarea existente.
+     * Ejemplo simple de una operación de "actualización" antes de llegar
+     * al CRUD completo del Día 8.
      */
-    public Tarea crear(Tarea tarea) {
-        tarea.setId(null);
-        tarea.setCompletada(false);
-        return tareaRepository.save(tarea);
+    public Optional<Tarea> alternarCompletada(Long id) {
+        return tareaRepository.findById(id).map(tarea -> {
+            tarea.setCompletada(!tarea.isCompletada());
+            return tareaRepository.save(tarea);
+        });
     }
 
 }

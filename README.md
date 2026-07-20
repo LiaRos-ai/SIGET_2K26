@@ -103,8 +103,38 @@ mvn clean
 mvn spring-boot:run
 ```
 
-Luego abrir `http://localhost:8080/` — debe mostrar la tarjeta de verificación
-"¡Spring Boot está corriendo correctamente!".
+## Estado actual: Sprint 2 (Día 6) — Spring MVC del lado backend
+
+Novedades del Día 6 respecto del Día 5:
+
+- Se agregó `dto/TareaFormDTO.java`: el formulario de creación ya NO
+  bindea contra la entidad `Tarea` completa, sino contra este DTO que
+  solo expone `titulo`. Esto evita el problema de **over-posting**
+  (que alguien manipule campos ocultos como `id` o `completada` desde
+  la petición HTTP) — ver el comentario en esa clase.
+- `GET /tareas` ahora acepta un filtro opcional con `@RequestParam`:
+  `/tareas?completada=true` o `/tareas?completada=false`. El listado
+  muestra tres links (Todas / Pendientes / Completadas).
+- Se agregó `POST /tareas/{id}/completar` (`@PathVariable`), que alterna
+  el estado de una tarea. Es una operación de "actualización" simple,
+  antes de llegar al CRUD completo del Día 8.
+- `TareaService` ahora tiene `listarFiltradas(Boolean completada)` y
+  `alternarCompletada(Long id)`.
+- Nota sobre @PutMapping/@DeleteMapping: los formularios HTML solo
+  soportan GET y POST de forma nativa, así que esta capa Thymeleaf sigue
+  usando POST para "actualizar". Los verbos PUT/DELETE reales se usan
+  desde el Día 11 con `@RestController` (Postman, JavaScript).
+
+## Cómo ejecutar
+
+```bash
+mvn clean
+mvn spring-boot:run
+```
+
+- `http://localhost:8080/tareas` → listado con filtro (Todas/Pendientes/Completadas).
+- `http://localhost:8080/tareas?completada=true` → solo las completadas.
+- Botón "↺" en cada tarjeta → alterna el estado (POST /tareas/{id}/completar).
 
 Si el puerto 8080 está ocupado, cambiar `server.port` en `application.properties`.
 
