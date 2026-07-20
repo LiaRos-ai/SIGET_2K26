@@ -1,5 +1,6 @@
 package com.tallerpw.gestiontareas.service;
 
+import com.tallerpw.gestiontareas.model.Categoria;
 import com.tallerpw.gestiontareas.model.Tarea;
 import com.tallerpw.gestiontareas.repository.TareaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,16 +34,16 @@ public class TareaService {
     }
 
     /**
-     * Día 6: usado por GET /tareas?completada=true|false. Si el parámetro
-     * viene vacío (null), no se filtra nada y se devuelven todas.
+     * Día 6: usado por GET /tareas?completada=true|false.
+     * Día 7: en vez de filtrar a mano con streams, se delega en el query
+     * method findByCompletada, generado automáticamente por Spring Data
+     * JPA a partir del nombre del método declarado en TareaRepository.
      */
     public List<Tarea> listarFiltradas(Boolean completada) {
         if (completada == null) {
             return tareaRepository.findAll();
         }
-        return tareaRepository.findAll().stream()
-                .filter(t -> t.isCompletada() == completada)
-                .toList();
+        return tareaRepository.findByCompletada(completada);
     }
 
     public Optional<Tarea> buscarPorId(Long id) {
@@ -50,7 +51,18 @@ public class TareaService {
     }
 
     public Tarea crear(String titulo) {
-        Tarea nueva = new Tarea(null, titulo, false);
+        return crear(titulo, null);
+    }
+
+    /**
+     * Día 7: overload que permite asignar una Categoria al crear la
+     * tarea. Usado hoy solo por DataInitializer para poblar datos de
+     * ejemplo con la relación ya armada; el formulario de creación
+     * (tarea-form.html) todavía no deja elegir categoría — eso se agrega
+     * como parte del CRUD completo del Día 8.
+     */
+    public Tarea crear(String titulo, Categoria categoria) {
+        Tarea nueva = new Tarea(null, titulo, false, categoria);
         return tareaRepository.save(nueva);
     }
 
