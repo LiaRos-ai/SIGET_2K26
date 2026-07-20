@@ -59,22 +59,21 @@
         </dependency>
 
         <!-- H2 Database (embedded - para desarrollo, Sprint 0) -->
+        <!--
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        -->
 
         <!-- Driver MySQL (cambiar por org.postgresql:postgresql si se usa PostgreSQL) -->
-        <!-- Descomentar cuando se use BD real (a partir del Día 7) -->
-        <!--
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        -->
-
+       
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
