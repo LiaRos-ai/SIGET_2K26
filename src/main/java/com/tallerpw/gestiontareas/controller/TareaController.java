@@ -2,58 +2,44 @@ package com.tallerpw.gestiontareas.controller;
 
 import com.tallerpw.gestiontareas.dto.TareaFormDTO;
 import com.tallerpw.gestiontareas.model.Tarea;
+import com.tallerpw.gestiontareas.service.CategoriaService;
 import com.tallerpw.gestiontareas.service.TareaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
  * Controlador de la capa web para "Tarea".
  *
- * Día 3: se reemplaza el @ResponseBody de texto plano del Día 2 por una
- * vista Thymeleaf real.
+ * Día 3: reemplaza el @ResponseBody de texto plano por vistas Thymeleaf.
+ * Día 5: formulario de creación con th:object/th:field y @Valid.
+ * Día 6: @RequestParam (filtro), @PathVariable (toggle), DTO.
+ * Día 7: persistencia real con Spring Data JPA.
  *
- * Día 5: se agrega el formulario de creación con th:object/th:field y
- * validación con @Valid + BindingResult.
- *
- * Día 6: se repasa el ciclo petición-respuesta de Spring MVC completo:
- *   - @RequestParam: filtro opcional en el listado (?completada=true|false).
- *   - @PathVariable: ya usado desde el Día 3 en /tareas/{id}; ahora también
- *     en el toggle de estado (POST /tareas/{id}/completar).
- *   - DTO: el formulario ya no bindea contra la entidad Tarea, sino contra
- *     TareaFormDTO (ver esa clase para la razón: evitar over-posting).
- *   - @PutMapping/@DeleteMapping: los formularios HTML solo soportan GET y
- *     POST de forma nativa, así que en esta capa web (Thymeleaf) seguimos
- *     usando POST para "actualizar" y "eliminar". Los verbos PUT y DELETE
- *     reales se usan a partir del Día 11 con @RestController, donde el
- *     cliente (Postman, JavaScript) sí puede enviarlos directamente.
+ * Día 8: CRUD completo. Se agregan:
+ *   - GET  /tareas/{id}/editar  -> formulario de edición (precargado)
+ *   - POST /tareas/{id}/editar  -> guarda los cambios
+ *   - POST /tareas/{id}/eliminar -> elimina la tarea
+ * El mismo formulario (tarea-form.html) se reutiliza para crear y
+ * editar, distinguiendo el caso con el atributo "editando" del Model.
  */
 @Controller
 public class TareaController {
 
     private final TareaService tareaService;
+    private final CategoriaService categoriaService;
 
     @Autowired
-    public TareaController(TareaService tareaService) {
+    public TareaController(TareaService tareaService, CategoriaService categoriaService) {
         this.tareaService = tareaService;
+        this.categoriaService = categoriaService;
     }
 
-    /**
-     * Listado de tareas, con filtro opcional por estado.
-     * @RequestParam(required = false) hace que el parámetro sea opcional:
-     * /tareas               -> completada == null -> muestra todas
-     * /tareas?completada=true  -> solo completadas
-     * /tareas?completada=false -> solo pendientes
-     */
     @GetMapping("/tareas")
     public String listar(@RequestParam(required = false) Boolean completada, Model model) {
         List<Tarea> tareas = tareaService.listarFiltradas(completada);
@@ -63,9 +49,6 @@ public class TareaController {
         return "tareas";
     }
 
-    /**
-     * Detalle de una tarea puntual. @PathVariable extrae el {id} de la URL.
-     */
     @GetMapping("/tareas/{id}")
     public String detalle(@PathVariable Long id, Model model) {
         return tareaService.buscarPorId(id)
@@ -77,34 +60,70 @@ public class TareaController {
     }
 
     /**
-     * Muestra el formulario vacío. Ahora el Model expone un TareaFormDTO
-     * en vez de una Tarea completa (Día 6: separación DTO / entidad).
+     * Formulario vacío para CREAR. "editando=false" le indica a la vista
+     * que debe enviar el POST a /tareas (no a /tareas/{id}/editar).
      */
     @GetMapping("/tareas/nueva")
     public String formularioNuevaTarea(Model model) {
         model.addAttribute("tarea", new TareaFormDTO());
+        model.addAttribute("categorias", categoriaService.listarTodas());
+        model.addAttribute("editando", false);
         return "tarea-form";
     }
 
-    /**
-     * Recibe el formulario. El DTO solo expone "titulo": ni "id" ni
-     * "completada" pueden llegar manipulados desde la petición HTTP,
-     * porque esos campos ni siquiera existen en TareaFormDTO.
-     */
     @PostMapping("/tareas")
-    public String crear(@Valid @ModelAttribute("tarea") TareaFormDTO formulario, BindingResult resultado) {
+    public String crear(@Valid @ModelAttribute("tarea") TareaFormDTO formulario, BindingResult resultado, Model model) {
         if (resultado.hasErrors()) {
+            model.addAttribute("categorias", categoriaService.listarTodas());
+            model.addAttribute("editando", false);
             return "tarea-form";
         }
-        tareaService.crear(formulario.getTitulo());
+        tareaService.crearDesdeFormulario(formulario.getTitulo(), formulario.getCategoriaId());
         return "redirect:/tareas";
     }
 
     /**
-     * Alterna el estado completada/pendiente. Se modela como POST (no
-     * PUT) porque lo dispara un <form> HTML normal desde la vista; ver el
-     * comentario de la clase sobre @PutMapping/@DeleteMapping reales.
+     * Formulario precargado para EDITAR. "editando=true" + "tareaId" le
+     * indican a la vista que debe enviar el POST a /tareas/{id}/editar.
      */
+    @GetMapping("/tareas/{id}/editar")
+    public String formularioEditar(@PathVariable Long id, Model model) {
+        return tareaService.buscarPorId(id)
+                .map(tarea -> {
+                    TareaFormDTO formulario = new TareaFormDTO();
+                    formulario.setTitulo(tarea.getTitulo());
+                    formulario.setCategoriaId(tarea.getCategoria() != null ? tarea.getCategoria().getId() : null);
+
+                    model.addAttribute("tarea", formulario);
+                    model.addAttribute("categorias", categoriaService.listarTodas());
+                    model.addAttribute("editando", true);
+                    model.addAttribute("tareaId", id);
+                    return "tarea-form";
+                })
+                .orElse("tarea-no-encontrada");
+    }
+
+    @PostMapping("/tareas/{id}/editar")
+    public String actualizar(@PathVariable Long id,
+                              @Valid @ModelAttribute("tarea") TareaFormDTO formulario,
+                              BindingResult resultado, Model model) {
+        if (resultado.hasErrors()) {
+            model.addAttribute("categorias", categoriaService.listarTodas());
+            model.addAttribute("editando", true);
+            model.addAttribute("tareaId", id);
+            return "tarea-form";
+        }
+        return tareaService.actualizarDesdeFormulario(id, formulario.getTitulo(), formulario.getCategoriaId())
+                .map(t -> "redirect:/tareas")
+                .orElse("tarea-no-encontrada");
+    }
+
+    @PostMapping("/tareas/{id}/eliminar")
+    public String eliminar(@PathVariable Long id) {
+        tareaService.eliminar(id);
+        return "redirect:/tareas";
+    }
+
     @PostMapping("/tareas/{id}/completar")
     public String alternarCompletada(@PathVariable Long id) {
         tareaService.alternarCompletada(id);

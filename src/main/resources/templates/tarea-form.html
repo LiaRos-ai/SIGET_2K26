@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nueva tarea</title>
+    <title th:text="${editando} ? 'Editar tarea' : 'Nueva tarea'">Tarea</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
@@ -13,22 +13,34 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-md-6">
-                <h1 class="h4 mb-3">Nueva tarea</h1>
+                <h1 class="h4 mb-3" th:text="${editando} ? 'Editar tarea' : 'Nueva tarea'">Tarea</h1>
 
-                <!-- th:object ata el formulario completo al objeto "tarea" del Model.
-                     A partir de acá, th:field="{titulo}" se refiere a tarea.titulo -->
-                <form th:action="@{/tareas}" th:object="${tarea}" method="post" class="card card-body shadow-sm">
+                <!-- th:action cambia según estemos creando o editando:
+                     - Crear:  POST /tareas
+                     - Editar: POST /tareas/{id}/editar
+                     th:object ata el formulario al mismo DTO (TareaFormDTO) en ambos casos. -->
+                <form th:action="${editando} ? @{/tareas/{id}/editar(id=${tareaId})} : @{/tareas}"
+                      th:object="${tarea}" method="post" class="card card-body shadow-sm">
 
                     <div class="mb-3">
                         <label class="form-label">Título</label>
-                        <!-- th:field genera automáticamente id, name y value -->
                         <input type="text" th:field="*{titulo}" class="form-control"
                                th:classappend="${#fields.hasErrors('titulo')} ? 'is-invalid'" />
-
-                        <!-- th:errors muestra el mensaje definido en @NotBlank/@Size si el campo falló -->
                         <div class="invalid-feedback" th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}">
                             Error en el título
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <!-- th:field="*{categoriaId}" ata el <select> al mismo DTO.
+                             th:selected marca la opción actual como elegida al editar. -->
+                        <select th:field="*{categoriaId}" class="form-select">
+                            <option value="">(sin categoría)</option>
+                            <option th:each="cat : ${categorias}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.nombre}">Categoría</option>
+                        </select>
                     </div>
 
                     <button type="submit" class="btn btn-primary">Guardar</button>

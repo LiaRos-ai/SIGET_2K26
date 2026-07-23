@@ -19,9 +19,15 @@
                     <div class="card-body">
                         <h1 class="h5" th:text="${tarea.titulo}">Título</h1>
                         <p class="text-muted mb-2">ID: <span th:text="${tarea.id}">0</span></p>
+                        <p th:if="${tarea.categoria != null}" class="text-muted mb-2">
+                            Categoría: <span th:text="${tarea.categoria.nombre}">Categoría</span>
+                        </p>
 
                         <span th:if="${tarea.completada}" class="badge bg-success">Completada</span>
                         <span th:unless="${tarea.completada}" class="badge bg-warning text-dark">Pendiente</span>
+
+                        <hr>
+                        <a th:href="@{/tareas/{id}/editar(id=${tarea.id})}" class="btn btn-sm btn-outline-secondary">Editar</a>
                     </div>
                 </div>
             </div>
