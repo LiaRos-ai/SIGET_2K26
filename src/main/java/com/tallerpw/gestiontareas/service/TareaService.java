@@ -18,15 +18,21 @@ import java.util.Optional;
  * recomendada por Spring). @Autowired en el constructor es opcional desde
  * Spring 4.3 si la clase tiene un único constructor, pero se deja explícito
  * en el Día 2 para que quede claro cómo funciona la inyección.
+ *
+ * Día 8: se agrega CategoriaService como segunda dependencia, para
+ * resolver el id de categoría que llega desde el formulario (el
+ * Controller nunca habla directamente con CategoriaRepository).
  */
 @Service
 public class TareaService {
 
     private final TareaRepository tareaRepository;
+    private final CategoriaService categoriaService;
 
     @Autowired
-    public TareaService(TareaRepository tareaRepository) {
+    public TareaService(TareaRepository tareaRepository, CategoriaService categoriaService) {
         this.tareaRepository = tareaRepository;
+        this.categoriaService = categoriaService;
     }
 
     public List<Tarea> listarTodas() {
@@ -50,16 +56,9 @@ public class TareaService {
         return tareaRepository.findById(id);
     }
 
-    public Tarea crear(String titulo) {
-        return crear(titulo, null);
-    }
-
     /**
-     * Día 7: overload que permite asignar una Categoria al crear la
-     * tarea. Usado hoy solo por DataInitializer para poblar datos de
-     * ejemplo con la relación ya armada; el formulario de creación
-     * (tarea-form.html) todavía no deja elegir categoría — eso se agrega
-     * como parte del CRUD completo del Día 8.
+     * Día 7: usado directamente por DataInitializer, que ya tiene el
+     * objeto Categoria a mano (no necesita buscarlo por id).
      */
     public Tarea crear(String titulo, Categoria categoria) {
         Tarea nueva = new Tarea(null, titulo, false, categoria);
@@ -67,15 +66,52 @@ public class TareaService {
     }
 
     /**
+     * Día 8: usado por el Controller cuando llega el formulario de
+     * creación. A diferencia del método anterior, acá solo tenemos el ID
+     * de la categoría elegida en el <select>, así que hay que resolverlo
+     * a través de CategoriaService antes de armar la Tarea.
+     */
+    public Tarea crearDesdeFormulario(String titulo, Long categoriaId) {
+        Categoria categoria = resolverCategoria(categoriaId);
+        return crear(titulo, categoria);
+    }
+
+    /**
+     * Día 8: CRUD completo — actualizar una tarea existente (título y
+     * categoría) a partir de los datos del formulario de edición.
+     */
+    public Optional<Tarea> actualizarDesdeFormulario(Long id, String titulo, Long categoriaId) {
+        return tareaRepository.findById(id).map(tarea -> {
+            tarea.setTitulo(titulo);
+            tarea.setCategoria(resolverCategoria(categoriaId));
+            return tareaRepository.save(tarea);
+        });
+    }
+
+    /**
+     * Día 8: CRUD completo — eliminar una tarea. deleteById no lanza
+     * error si el id no existe (a diferencia de delete(entidad), que sí
+     * lo haría), lo cual es cómodo para este caso de uso simple.
+     */
+    public void eliminar(Long id) {
+        tareaRepository.deleteById(id);
+    }
+
+    /**
      * Día 6: alterna el estado completada/pendiente de una tarea existente.
-     * Ejemplo simple de una operación de "actualización" antes de llegar
-     * al CRUD completo del Día 8.
      */
     public Optional<Tarea> alternarCompletada(Long id) {
         return tareaRepository.findById(id).map(tarea -> {
             tarea.setCompletada(!tarea.isCompletada());
             return tareaRepository.save(tarea);
         });
+    }
+
+    private Categoria resolverCategoria(Long categoriaId) {
+        if (categoriaId == null) {
+            return null;
+        }
+        return categoriaService.buscarPorId(categoriaId).orElse(null);
     }
 
 }

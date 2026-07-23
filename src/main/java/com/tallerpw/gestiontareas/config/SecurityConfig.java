@@ -14,7 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * cuentas"), donde esta clase se reemplaza por la configuración real con
  * UserDetailsService, roles y BCryptPasswordEncoder.
  *
- * IMPORTANTE: recordar que sin esta
+ * IMPORTANTE para el docente: recordar a los estudiantes que sin esta
  * clase, Spring Security bloquearía TODAS las rutas por defecto y pediría
  * un usuario "user" con una contraseña generada en consola.
  */

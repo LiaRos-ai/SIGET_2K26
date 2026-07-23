@@ -5,12 +5,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * Controlador de verificación para el Día 1.
- * Sirve únicamente para comprobar que el entorno (JDK, Maven, IDE,
- * Spring Boot, Thymeleaf) quedó correctamente configurado.
- *
- * A partir del Día 3 este controlador se reemplaza/expande con las
- * vistas reales del "Sistema de Gestión de Tareas".
+ * Controlador de verificación del entorno (Día 1).
+ * A partir del Día 3 también sirve como puerta de entrada hacia el
+ * listado de tareas real, construido con Thymeleaf.
  */
 @Controller
 public class HomeController {
@@ -19,7 +16,7 @@ public class HomeController {
     public String inicio(Model model) {
         model.addAttribute("mensaje", "¡Spring Boot está corriendo correctamente!");
         model.addAttribute("proyecto", "Sistema de Gestión de Tareas");
-        model.addAttribute("sprint", "Sprint 0 - Día 1");
+        model.addAttribute("sprint", "Sprint 2 - Día 8");
         return "inicio";
     }
 

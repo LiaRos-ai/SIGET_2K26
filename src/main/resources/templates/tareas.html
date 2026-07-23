@@ -46,6 +46,8 @@
                            class="text-decoration-none text-dark">Título</a>
 
                         <div class="d-flex align-items-center gap-2">
+                            <span th:if="${tarea.categoria != null}" class="badge bg-info text-dark"
+                                  th:text="${tarea.categoria.nombre}">Categoría</span>
                             <span th:if="${tarea.completada}" class="badge bg-success">Completada</span>
                             <span th:unless="${tarea.completada}" class="badge bg-warning text-dark">Pendiente</span>
 
@@ -54,6 +56,18 @@
                                 <button type="submit" class="btn btn-sm btn-outline-primary">↺</button>
                             </form>
                         </div>
+                    </div>
+
+                    <!-- Día 8: acciones de edición y eliminación (CRUD completo) -->
+                    <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                        <a th:href="@{/tareas/{id}/editar(id=${tarea.id})}"
+                           class="btn btn-sm btn-outline-secondary">Editar</a>
+
+                        <!-- confirm() evita un borrado accidental con un solo clic -->
+                        <form th:action="@{/tareas/{id}/eliminar(id=${tarea.id})}" method="post"
+                              onsubmit="return confirm('¿Eliminar esta tarea? Esta acción no se puede deshacer.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                        </form>
                     </div>
                 </div>
             </div>
