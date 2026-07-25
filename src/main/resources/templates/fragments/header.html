@@ -2,15 +2,38 @@
      Se incluye en cada página con:
      <div th:replace="~{fragments/header :: header}"></div>
      th:replace SUSTITUYE por completo la etiqueta anfitriona (el <div>
-     de arriba desaparece; queda directamente el <nav> de este archivo). -->
-<html xmlns:th="http://www.thymeleaf.org">
+     de arriba desaparece; queda directamente el <nav> de este archivo).
+
+     Día 9: se agrega xmlns:sec y los atributos sec:authorize, provistos
+     por la dependencia thymeleaf-extras-springsecurity6 (incluida en el
+     pom.xml desde el Día 1). Permiten mostrar u ocultar partes de la
+     vista según si hay sesión iniciada y qué rol tiene. -->
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
     <nav th:fragment="header" class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
         <div class="container">
             <a class="navbar-brand" href="/">Sistema de Gestión de Tareas</a>
-            <div class="navbar-nav">
+
+            <div class="navbar-nav me-auto">
                 <a class="nav-link" href="/">Inicio</a>
-                <a class="nav-link" href="/tareas">Tareas</a>
+                <!-- Solo visible si hay sesión iniciada -->
+                <a class="nav-link" href="/tareas" sec:authorize="isAuthenticated()">Tareas</a>
+                <!-- Solo visible para el rol ADMIN -->
+                <a class="nav-link" href="/admin" sec:authorize="hasRole('ADMIN')">Admin</a>
+            </div>
+
+            <div class="navbar-nav align-items-md-center">
+                <span class="nav-link text-white-50" sec:authorize="isAuthenticated()">
+                    <span sec:authentication="name">usuario@ejemplo.com</span>
+                </span>
+
+                <form th:action="@{/logout}" method="post" sec:authorize="isAuthenticated()" class="d-flex">
+                    <button type="submit" class="btn btn-sm btn-outline-light">Salir</button>
+                </form>
+
+                <!-- Solo visible SIN sesión iniciada -->
+                <a class="nav-link" href="/login" sec:authorize="!isAuthenticated()">Ingresar</a>
+                <a class="nav-link" href="/registro" sec:authorize="!isAuthenticated()">Registrarse</a>
             </div>
         </div>
     </nav>
