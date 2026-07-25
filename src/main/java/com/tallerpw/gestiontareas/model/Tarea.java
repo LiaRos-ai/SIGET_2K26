@@ -20,7 +20,11 @@ import lombok.ToString;
  *   - @Id + @GeneratedValue: clave primaria autogenerada por la base de datos.
  *   - @ManyToOne: cada tarea pertenece (opcionalmente) a una Categoria.
  *
- * TareaRepositoryEnMemoria (Días 2-6) queda retirada: a partir de hoy,
+ * Día 10: se agrega "propietario" (Usuario dueño de la tarea). Con esto,
+ * TareaService puede filtrar el listado para que cada usuario vea solo
+ * sus propias tareas, salvo que sea ADMIN (HU-07).
+ *
+ * TareaRepositoryEnMemoria (Días 2-6) queda retirada: a partir del Día 7,
  * TareaRepository extiende JpaRepository y Spring Data JPA genera la
  * implementación real contra la base de datos.
  */
@@ -55,6 +59,18 @@ public class Tarea {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Categoria categoria;
+
+    /**
+     * Día 10: dueño de la tarea. Es "nullable" a propósito, para no
+     * romper los datos sembrados antes del Día 9 (cuando Usuario ni
+     * siquiera existía). En una aplicación real, conviene migrar los
+     * datos existentes en vez de dejar el campo opcional para siempre.
+     */
+    @ManyToOne
+    @JoinColumn(name = "propietario_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Usuario propietario;
 
 }
 

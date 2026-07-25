@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 /**
  * Capa Service para Usuario. La regla de negocio más importante que vive
  * acá: la contraseña SIEMPRE se guarda encriptada (hash con
@@ -25,6 +27,15 @@ public class UsuarioService {
 
     public boolean existeEmail(String email) {
         return usuarioRepository.findByEmail(email).isPresent();
+    }
+
+    /**
+     * Día 10: usado por TareaController para resolver el Usuario dueño a
+     * partir del email autenticado (Authentication.getName() devuelve el
+     * "username" con el que se logueó, que en este proyecto es el email).
+     */
+    public Optional<Usuario> buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
     }
 
     /**

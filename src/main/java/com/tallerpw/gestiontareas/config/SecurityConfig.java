@@ -3,38 +3,31 @@ package com.tallerpw.gestiontareas.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuración de seguridad real (Día 9).
+ * Configuración de seguridad.
  *
- * Desde el Día 1 hasta el Día 8, esta clase dejaba todo abierto
- * (permitAll en cualquier ruta) para no bloquear el desarrollo de las
- * vistas antes de tiempo. A partir de hoy:
+ * Día 1-8: todo abierto (permitAll), para no bloquear el desarrollo de
+ * las vistas antes de tener autenticación real.
  *
- *   - Las rutas públicas (home, login, registro, estáticos) quedan con
- *     permitAll.
- *   - /admin/** requiere el rol ADMIN.
- *   - Cualquier otra ruta (incluida /tareas/**) requiere estar autenticado.
- *   - Se configura un formulario de login propio (no el genérico de
- *     Spring Security) y el logout.
+ * Día 9: autenticación real — login, registro, BCrypt, roles y
+ * autorización por endpoint (permitAll / authenticated / hasRole).
  *
- * CSRF sigue deshabilitado por ahora: se aborda en profundidad el Día 10
- * ("Filtros, sesiones y rutas seguras"), junto con el manejo de sesión.
- * La protección real de rutas POR ROL (más allá de este ejemplo simple
- * con /admin) también se profundiza ese día.
+ * Día 10: se completa el cuadro:
+ *   - CSRF ya NO está deshabilitado (ver el comentario más abajo).
+ *   - Se configura explícitamente el manejo de sesión (creación y
+ *     límite de sesiones simultáneas).
+ *   - La autorización por ROL a nivel de ruta (/admin/**) se complementa
+ *     con autorización a nivel de DATOS en TareaService (HU-07: cada
+ *     usuario gestiona solo sus propias tareas, salvo que sea ADMIN).
  */
 @Configuration
 public class SecurityConfig {
 
-    /**
-     * BCryptPasswordEncoder aplica un algoritmo de hash lento a propósito
-     * (para dificultar ataques de fuerza bruta) y agrega automáticamente
-     * un "salt" distinto en cada contraseña, aunque dos usuarios elijan
-     * la misma clave.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -57,7 +50,27 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            .csrf(csrf -> csrf.disable()); // se revisa en profundidad el Día 10
+            // Día 10: manejo explícito de sesión.
+            // IF_REQUIRED (el valor por defecto) crea una sesión HTTP recién
+            // cuando hace falta (por ejemplo, al iniciar sesión) — se deja
+            // explícito acá solo para que quede visible en el código.
+            // maximumSessions(1) fuerza que cada usuario tenga como máximo
+            // una sesión activa: si inicia sesión en un segundo navegador,
+            // la primera sesión se invalida automáticamente.
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+            );
+
+        // Día 10: CSRF HABILITADO. Hasta el Día 9 este bloque terminaba con
+        // .csrf(csrf -> csrf.disable()); ahora, al no llamar a csrf() en
+        // absoluto, Spring Security usa la protección CSRF por defecto
+        // (el token viaja asociado a la sesión HTTP — por eso tiene sentido
+        // verlo el mismo día que el manejo de sesión). Con Thymeleaf,
+        // cualquier <form th:action="..."> ya inserta automáticamente el
+        // campo oculto con el token (integración con RequestDataValueProcessor):
+        // no hace falta tocar ningún formulario existente.
 
         return http.build();
     }

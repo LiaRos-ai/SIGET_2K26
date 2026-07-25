@@ -8,10 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * "Sistema de Gestión de Tareas" - desarrollado en vivo por el docente
  * durante las 3 semanas del curso, sesión a sesión.
  *
- * Estado actual: Sprint 2 (Día 8) - CRUD completo e integración Front-Back.
- * Se completan las operaciones de actualizar y eliminar (editar/eliminar
- * una tarea desde la vista), con selector de categoría en el formulario.
- * HU-04 queda cerrada.
+ * Estado actual: Sprint 2 (Día 10) - Filtros, sesiones y rutas seguras. CIERRE DE SPRINT 2.
+ * CSRF habilitado, manejo explícito de sesión (maximumSessions), y
+ * autorización a nivel de datos (cada usuario ve/gestiona solo sus
+ * tareas, salvo ADMIN que ve todas). HU-07 queda cerrada.
  */
 @SpringBootApplication
 public class GestionTareasApplication {
