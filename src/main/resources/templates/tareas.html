@@ -19,6 +19,11 @@
             </div>
         </div>
 
+        <!-- Día 10: HU-07 — el ADMIN ve las tareas de todos los usuarios -->
+        <div th:if="${viendoTodas}" class="alert alert-primary py-2">
+            Estás viendo las tareas de <strong>todos los usuarios</strong> (rol ADMIN).
+        </div>
+
         <!-- Filtro con @RequestParam: cada link agrega ?completada=... a la URL -->
         <div class="btn-group btn-group-sm mb-3" role="group">
             <a th:href="@{/tareas}" class="btn btn-outline-secondary"
@@ -46,6 +51,8 @@
                            class="text-decoration-none text-dark">Título</a>
 
                         <div class="d-flex align-items-center gap-2">
+                            <span th:if="${viendoTodas and tarea.propietario != null}" class="badge bg-dark"
+                                  th:text="${tarea.propietario.nombre}">Propietario</span>
                             <span th:if="${tarea.categoria != null}" class="badge bg-info text-dark"
                                   th:text="${tarea.categoria.nombre}">Categoría</span>
                             <span th:if="${tarea.completada}" class="badge bg-success">Completada</span>

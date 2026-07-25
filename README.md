@@ -4,41 +4,32 @@ Proyecto**guia** que se desarrolla en vivo, sesión a sesión, durante las 3 sem
 del curso *Programación Web II*. Sirve como espejo técnico de lo que cada estudiante
 debe ir aplicando en su propio proyecto (ver los 5 proyectos propuestos).
 
-## Estado actual: Sprint 2 (Día 9) — Spring Security: autenticación y cuentas
+## Estado actual: Sprint 2 (Día 10) — Filtros, sesiones y rutas seguras · CIERRE DE SPRINT 2
 
-Novedades del Día 9 respecto del Día 8:
+Novedades del Día 10 respecto del Día 9:
 
-- **Nueva entidad `Usuario`** (`@Entity`, tabla `usuarios`): `nombre`,
-  `email` (único), `password` (hash, nunca texto plano) y `rol`
-  (`"USER"` o `"ADMIN"`).
-- **`CustomUserDetailsService`** (paquete nuevo `security/`): traduce un
-  `Usuario` de la base de datos al `UserDetails` que Spring Security
-  entiende, buscándolo por email.
-- **`UsuarioService`**: la contraseña se encripta con
-  `BCryptPasswordEncoder` antes de guardarse. El registro público
-  (`registrar(nombre, email, password)`) siempre asigna el rol `"USER"`
-  — nadie puede autoasignarse `"ADMIN"` desde el formulario, porque
-  `RegistroFormDTO` ni siquiera tiene ese campo.
-- **`GET/POST /registro`** (`AuthController`): formulario de registro
-  con validación (`@NotBlank`, `@Email`, `@Size` mínimo 6 caracteres) y
-  verificación de email duplicado.
-- **`GET /login`**: vista de login propia (el `POST /login` lo
-  intercepta Spring Security automáticamente vía `formLogin()`).
-- **`SecurityConfig` real**: rutas públicas (`/`, `/login`, `/registro`,
-  estáticos) con `permitAll`; `/admin/**` requiere `hasRole("ADMIN")`;
-  cualquier otra ruta (incluido todo `/tareas/**`) requiere estar
-  autenticado.
-- **`/admin`** (`AdminController`): página mínima de ejemplo para
-  mostrar la autorización por rol en acción.
-- **`fragments/header.html`** ahora usa `sec:authorize` (de
-  `thymeleaf-extras-springsecurity6`, dependencia ya incluida desde el
-  Día 1) para mostrar Login/Registro sin sesión, o el email + botón
-  "Salir" con sesión iniciada.
-- **Cuentas de ejemplo** creadas por `DataInitializer` (protegidas contra
-  duplicados en reinicios): `admin@tallerpw.com` / `admin1234` (ADMIN) y
-  `estudiante@tallerpw.com` / `estudiante1234` (USER).
-- **CSRF sigue deshabilitado** por ahora: se aborda en profundidad el
-  Día 10, junto con sesiones y protección de rutas más fina por rol.
+- **CSRF habilitado**: hasta el Día 9, `SecurityConfig` terminaba con
+  `.csrf(csrf -> csrf.disable())`. Ahora ese bloque directamente no
+  aparece, así que Spring Security usa la protección CSRF por defecto
+  (token asociado a la sesión HTTP). Ningún formulario existente
+  necesitó cambios: Thymeleaf inserta el campo oculto automáticamente
+  en cualquier `<form th:action="...">`.
+- **Manejo explícito de sesión**: `sessionCreationPolicy(IF_REQUIRED)`
+  (el valor por defecto, ahora visible en el código) y
+  `maximumSessions(1)` — cada usuario tiene como máximo una sesión
+  activa a la vez.
+- **HU-07 cerrada: autorización a nivel de DATOS.** Se agregó
+  `Tarea.propietario` (Usuario dueño). `GET /tareas` ahora muestra:
+  - Todas las tareas de todos los usuarios, si es ADMIN.
+  - Solo tus propias tareas, si es un usuario normal.
+  - Editar, eliminar y alternar el estado de una tarea ahora verifican
+    la propiedad (`TareaService.puedeGestionar`): un usuario normal solo
+    puede gestionar sus propias tareas; un ADMIN puede gestionar
+    cualquiera.
+- `DataInitializer` se reordenó: ahora crea los usuarios de ejemplo
+  ANTES que las tareas, para poder asignarles un propietario desde el
+  arranque, y usa `obtenerOCrear` para no fallar si ya existen (además
+  de la verificación de email duplicado del Día 9).
 
 ## Cómo ejecutar
 
@@ -46,11 +37,9 @@ Novedades del Día 9 respecto del Día 8:
 mvn spring-boot:run
 ```
 
-- `http://localhost:8080/` → pública.
-- `http://localhost:8080/tareas` → ahora exige login (redirige a `/login` si no hay sesión).
-- `http://localhost:8080/login` → probar con `admin@tallerpw.com` / `admin1234` o `estudiante@tallerpw.com` / `estudiante1234`.
-- `http://localhost:8080/admin` → solo accesible logueado como `admin@tallerpw.com` (rol ADMIN); con el usuario `estudiante` da error 403.
-- `http://localhost:8080/registro` → crear una cuenta nueva (siempre con rol USER).
+- Iniciar sesión como `estudiante@tallerpw.com` / `estudiante1234` → `/tareas` muestra solo sus 3 tareas de ejemplo.
+- Iniciar sesión como `admin@tallerpw.com` / `admin1234` → `/tareas` muestra un aviso "viendo las tareas de todos los usuarios" y las lista todas, con el nombre del propietario en cada tarjeta.
+- Probar editar/eliminar una tarea ajena manipulando la URL manualmente (por ejemplo, `/tareas/1/editar` estando logueado con otra cuenta que no sea dueña ni ADMIN) → debería mostrar "tarea no encontrada", no un error.
 
 ## Configuración de Git (actividad del Día 2)
 
@@ -65,9 +54,9 @@ git push -u origin main
 ```
 
 Convención de commits sugerida para todo el curso: `Sprint X: descripción breve en presente`
-(ej. `Sprint 2: agrega autenticación con Spring Security`).
+(ej. `Sprint 2: cierra Sprint 2 con CSRF, sesiones y tareas por usuario`).
 
-## Product Backlog (actualizado — Sprint 2, Día 9)
+## Product Backlog (actualizado — cierre de Sprint 2, Día 10)
 
 | # | Historia de usuario | Prioridad | Sprint estimado | Estado |
 |---|---|---|---|---|
@@ -77,21 +66,27 @@ Convención de commits sugerida para todo el curso: `Sprint X: descripción brev
 | HU-04 | Editar y eliminar una tarea existente | Alta | Sprint 2 | Hecho (Día 8) |
 | HU-05 | Persistencia real en base de datos | Alta | Sprint 2 | Hecho (Día 7) |
 | HU-06 | Registro e inicio de sesión | Alta | Sprint 2 | Hecho (Día 9) |
-| HU-07 | Vista de administrador (todas las tareas) | Media | Sprint 2 | En progreso (rol ADMIN y ruta protegida ya existen; falta la vista real) |
+| HU-07 | Vista de administrador (todas las tareas) | Media | Sprint 2 | **Hecho (Día 10)** |
 | HU-08 | Filtrar tareas por estado | Media | Sprint 2 | Hecho (Día 6) |
-| HU-09 | Endpoint REST de tareas | Alta | Sprint 3 | Backlog |
-| HU-10 | Seguridad transaccional | Alta | Sprint 3 | Backlog (parcial: DTO evita over-posting; contraseñas hasheadas) |
+| HU-09 | Endpoint REST de tareas | Alta | Sprint 3 | Backlog (Día 11) |
+| HU-10 | Seguridad transaccional | Alta | Sprint 3 | Backlog (parcial: DTO, contraseñas hasheadas, CSRF, autorización por datos) |
 | HU-11 | Empaquetado y despliegue (JAR) | Alta | Sprint 3 | Backlog |
 
-Nota: las tareas del proyecto guía todavía NO están asociadas a un
-Usuario dueño (eso implicaría agregar una relación Usuario-Tarea). Por
-ahora, cualquier usuario autenticado ve y gestiona las mismas tareas —
-la separación de "mis tareas" por usuario y el refinamiento de rutas por
-rol se profundizan el Día 10.
+**Sprint 2 cerrado.** Incremento entregado: entidades JPA y repositorios,
+CRUD completo conectado al frontend, autenticación con Spring Security,
+roles y rutas protegidas (coincide con el incremento planeado para el
+Sprint 2 en el plan de curso).
+
+## Sprint Review y Retrospectiva 2 (actividad del Día 10)
+
+- **Sprint Review:** cada estudiante/equipo muestra su proyecto de práctica
+  corriendo, con login, CRUD completo, y al menos una ruta protegida por rol.
+- **Retrospectiva:** ¿qué funcionó bien esta semana (Días 6-10)? ¿qué fue
+  difícil? ¿qué cambiaríamos para la semana 3 (Sprint 3: API REST y despliegue)?
 
 ## Tablero Scrum/Kanban
 
-Mover HU-06 a "Hecho". Dejar HU-07 en "En progreso" para el Día 10.
+Mover HU-07 a "Hecho". Preparar el Sprint 3 Planning (Día 11) con HU-09, HU-10 y HU-11.
 
 ## Roles Scrum del curso
 
@@ -100,12 +95,7 @@ Mover HU-06 a "Hecho". Dejar HU-07 en "En progreso" para el Día 10.
 
 ## Próximos hitos
 
-- **Día 10:** Filtros, sesiones y rutas seguras — SecurityFilterChain
-  más fino, protección de rutas por rol, manejo de sesión HTTP,
-  protección CSRF. Cierre de Sprint 2 (Sprint Review, Retrospectiva y
-  Evaluación semanal 2).
-
-
-
-
+- **Día 11:** Sprint 3 Planning — API REST con Spring Boot
+  (`@RestController`, `@RequestBody`/`@ResponseBody`, serialización JSON,
+  pruebas con Postman).
 
