@@ -4,6 +4,8 @@ import com.tallerpw.gestiontareas.model.Categoria;
 import com.tallerpw.gestiontareas.model.Tarea;
 import com.tallerpw.gestiontareas.model.Usuario;
 import com.tallerpw.gestiontareas.repository.TareaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +20,15 @@ import java.util.Optional;
  * Día 8: se agrega CategoriaService como segunda dependencia.
  * Día 10: el listado y las operaciones de escritura ahora tienen en
  * cuenta al Usuario dueño de cada tarea (HU-07).
+ * Día 13: se agrega logging con SLF4J en las operaciones de escritura
+ * y en los intentos de gestionar una tarea sin permiso (log.warn —
+ * útil para detectar patrones sospechosos, sin ser necesariamente un
+ * error del sistema).
  */
 @Service
 public class TareaService {
+
+    private static final Logger log = LoggerFactory.getLogger(TareaService.class);
 
     private final TareaRepository tareaRepository;
     private final CategoriaService categoriaService;
@@ -101,9 +109,14 @@ public class TareaService {
      */
     public boolean eliminar(Long id, Usuario quienElimina) {
         return tareaRepository.findById(id)
-                .filter(tarea -> puedeGestionar(tarea, quienElimina))
                 .map(tarea -> {
+                    if (!puedeGestionar(tarea, quienElimina)) {
+                        log.warn("Intento de eliminar la tarea {} sin permiso (usuario id={})",
+                                id, quienElimina != null ? quienElimina.getId() : null);
+                        return false;
+                    }
                     tareaRepository.deleteById(id);
+                    log.info("Tarea eliminada: id={}", id);
                     return true;
                 })
                 .orElse(false);
@@ -142,17 +155,21 @@ public class TareaService {
     // ---------------------------------------------------------------
     // Día 11: métodos para la API REST (TareaRestController).
     //
-    // OJO: a diferencia de crearDesdeFormulario/actualizarDesdeFormulario,
-    // estos métodos NO reciben un Usuario ni aplican puedeGestionar —
-    // porque /api/tareas todavía no tiene su propia autenticación
-    // (queda abierta a propósito). Es una limitación conocida y
-    // documentada: se cierra el Día 12 ("Seguridad transaccional"),
-    // cuando la API se proteja con su propio mecanismo.
+    // Día 12: /api/** ya requiere autenticación (HTTP Basic), pero estos
+    // métodos TODAVÍA no aplican puedeGestionar: cualquier usuario
+    // autenticado en la API puede crear/editar/eliminar CUALQUIER tarea,
+    // no solo las propias. Es una limitación real y conocida, distinta
+    // de la de HU-07 en las vistas web — queda como ejercicio para
+    // quien quiera profundizar: pasar el Usuario autenticado también
+    // acá (con @AuthenticationPrincipal) y aplicar el mismo
+    // puedeGestionar que ya usan crearDesdeFormulario/eliminar/etc.
     // ---------------------------------------------------------------
 
     public Tarea crearDesdeApi(String titulo, Long categoriaId) {
         Categoria categoria = resolverCategoria(categoriaId);
-        return crear(titulo, categoria, null);
+        Tarea creada = crear(titulo, categoria, null);
+        log.info("Tarea creada vía API: id={}", creada.getId());
+        return creada;
     }
 
     public Optional<Tarea> actualizarDesdeApi(Long id, String titulo, Long categoriaId) {

@@ -30,11 +30,16 @@ import org.springframework.security.web.SecurityFilterChain;
  *      (nunca crea ni usa sesión HTTP para estas rutas).
  *   2. webFilterChain (@Order(2)): procesa todo lo demás. Es exactamente
  *      la configuración que ya conocíamos desde el Día 10 (formLogin,
- *      sesión, CSRF), sin ningún cambio.
+ *      sesión, CSRF), sin ningún cambio, más las rutas de Swagger UI
+ *      agregadas el Día 13.
  *
  * Cuando llega una petición, Spring Security evalúa las cadenas en
  * orden: si la ruta coincide con el securityMatcher de apiFilterChain
  * (/api/**), usa esa; si no, sigue a webFilterChain.
+ *
+ * Día 13: se agregan /swagger-ui/** y /v3/api-docs/** a las rutas
+ * públicas, para poder explorar la documentación de la API sin iniciar
+ * sesión (la API en sí sigue protegida con HTTP Basic al probarla).
  */
 @Configuration
 public class SecurityConfig {
@@ -80,6 +85,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/webjars/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
