@@ -2,6 +2,7 @@ package com.tallerpw.gestiontareas.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -11,27 +12,29 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * Configuración de seguridad.
  *
- * Día 1-8: todo abierto (permitAll), para no bloquear el desarrollo de
- * las vistas antes de tener autenticación real.
+ * Día 1-8: todo abierto (permitAll).
+ * Día 9: autenticación real — login, registro, BCrypt, roles.
+ * Día 10: CSRF habilitado, manejo explícito de sesión, autorización a
+ *         nivel de datos (HU-07).
+ * Día 11: /api/** quedó abierta y sin CSRF, a propósito y temporalmente.
  *
- * Día 9: autenticación real — login, registro, BCrypt, roles y
- * autorización por endpoint (permitAll / authenticated / hasRole).
+ * Día 12: se protege la API, con un enfoque DISTINTO al de las vistas
+ * Thymeleaf, porque un cliente de API (Postman, una app externa) no
+ * inicia sesión con un formulario ni maneja cookies de la misma forma
+ * que un navegador. La solución: DOS SecurityFilterChain separadas,
+ * cada una con su propio securityMatcher:
  *
- * Día 10: se completa el cuadro:
- *   - CSRF ya NO está deshabilitado (ver el comentario más abajo).
- *   - Se configura explícitamente el manejo de sesión (creación y
- *     límite de sesiones simultáneas).
- *   - La autorización por ROL a nivel de ruta (/admin/**) se complementa
- *     con autorización a nivel de DATOS en TareaService (HU-07: cada
- *     usuario gestiona solo sus propias tareas, salvo que sea ADMIN).
+ *   1. apiFilterChain (@Order(1)): solo procesa /api/**. Usa HTTP Basic
+ *      (usuario y contraseña van en el header Authorization de CADA
+ *      petición, sin sesión ni cookies) y SessionCreationPolicy.STATELESS
+ *      (nunca crea ni usa sesión HTTP para estas rutas).
+ *   2. webFilterChain (@Order(2)): procesa todo lo demás. Es exactamente
+ *      la configuración que ya conocíamos desde el Día 10 (formLogin,
+ *      sesión, CSRF), sin ningún cambio.
  *
- * Día 11: se agrega /api/** a la lista de rutas públicas (permitAll) Y
- * se la exime de CSRF. Esto es una decisión TEMPORAL y a propósito, no
- * un descuido: la API REST recién nace hoy, y protegerla correctamente
- * (con su propio mecanismo, no con sesión de navegador) es justamente
- * el contenido del Día 12 ("Seguridad transaccional"). Mientras tanto,
- * cualquiera puede probar la API libremente desde Postman sin necesidad
- * de loguearse primero.
+ * Cuando llega una petición, Spring Security evalúa las cadenas en
+ * orden: si la ruta coincide con el securityMatcher de apiFilterChain
+ * (/api/**), usa esa; si no, sigue a webFilterChain.
  */
 @Configuration
 public class SecurityConfig {
@@ -41,12 +44,42 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Cadena para la API REST. HTTP Basic es el mecanismo más simple de
+     * Spring Security para proteger una API: el cliente manda
+     * "Authorization: Basic <usuario:contraseña en base64>" en cada
+     * petición. No hace falta un formulario de login propio para la API:
+     * Postman tiene una pestaña "Authorization" con un modo "Basic Auth"
+     * que arma ese header automáticamente.
+     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/**")
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+            .httpBasic(basic -> {}) // habilita HTTP Basic con su configuración por defecto
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // CSRF no aplica a APIs sin estado autenticadas por header:
+            // no hay cookie de sesión que un sitio malicioso pueda
+            // aprovechar (ver la Guía de Filtros, Sesiones y CSRF del Día 10).
+            .csrf(csrf -> csrf.disable());
+
+        return http.build();
+    }
+
+    /**
+     * Cadena para el resto de la aplicación (vistas Thymeleaf). Es la
+     * misma configuración de los Días 9-10, sin cambios.
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/webjars/**").permitAll()
-                .requestMatchers("/api/**").permitAll() // Día 11: abierta a propósito — se protege el Día 12
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -59,24 +92,13 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
-            // Día 10: manejo explícito de sesión.
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
-            )
-            // Día 11: /api/** queda exenta de CSRF. El token CSRF viaja
-            // asociado a la sesión de un navegador con cookies; un cliente
-            // de API típico (Postman, una app externa) no tiene ese
-            // contexto. Las APIs REST convencionalmente se protegen con
-            // otro mecanismo (API keys, JWT — Día 12), no con CSRF.
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
-
-        // Día 10: CSRF sigue HABILITADO para el resto de la aplicación
-        // (las vistas Thymeleaf). Con Thymeleaf, cualquier
-        // <form th:action="..."> ya inserta automáticamente el campo
-        // oculto con el token (integración con RequestDataValueProcessor):
-        // no hace falta tocar ningún formulario existente.
+            );
+        // CSRF sigue HABILITADO acá (no se llama a .csrf(...disable...)).
+        // Thymeleaf inserta el token automáticamente en <form th:action="...">.
 
         return http.build();
     }

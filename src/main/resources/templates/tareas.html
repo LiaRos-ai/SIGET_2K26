@@ -44,6 +44,11 @@
 
         <!-- row-cols-*: 1 columna en celulares, 2 en tablets, 3 en escritorio -->
         <div th:unless="${tareas.isEmpty()}" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            <!-- Día 12: th:text escapa automáticamente el contenido.
+                 Si tarea.titulo tuviera algo como <script>alert(1)</script>,
+                 Thymeleaf lo muestra como texto literal en pantalla, NO lo
+                 ejecuta. th:utext (unescaped) sí lo ejecutaría — por eso
+                 NUNCA se usa th:utext con datos que vienen del usuario. -->
             <div class="col" th:each="tarea : ${tareas}">
                 <div class="card h-100 shadow-sm">
                     <div class="card-body d-flex justify-content-between align-items-center">
