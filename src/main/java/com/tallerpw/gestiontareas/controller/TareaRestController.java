@@ -2,9 +2,14 @@ package com.tallerpw.gestiontareas.controller;
 
 import com.tallerpw.gestiontareas.dto.TareaRequestDTO;
 import com.tallerpw.gestiontareas.dto.TareaResponseDTO;
+import com.tallerpw.gestiontareas.exception.RecursoNoEncontradoException;
 import com.tallerpw.gestiontareas.model.Tarea;
 import com.tallerpw.gestiontareas.service.TareaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,24 +20,24 @@ import java.util.List;
 /**
  * API REST de tareas (Día 11).
  *
- * Diferencias clave con TareaController (la capa web con vistas Thymeleaf):
+ * Día 12: protegida con HTTP Basic (ver SecurityConfig).
  *
- *   - @RestController = @Controller + @ResponseBody en TODOS los métodos:
- *     cada valor que retornan los métodos se serializa directo a JSON
- *     (vía Jackson, ya incluido en spring-boot-starter-web), en vez de
- *     buscar una vista .html con ese nombre.
- *   - @RequestBody en vez de @ModelAttribute: el body de la petición
- *     (JSON) se deserializa directo a un objeto Java, en vez de leer
- *     campos de un formulario HTML.
- *   - Devuelve códigos de estado HTTP explícitos (200, 201, 204, 404)
- *     en vez de nombres de vista o redirects.
- *
- * Base path: /api/tareas (convención común para distinguir la API de
- * las rutas "de página" como /tareas).
+ * Día 13:
+ *   - Los "no encontrado" ahora lanzan RecursoNoEncontradoException, que
+ *     ApiExceptionHandler traduce a un 404 con un ErrorResponseDTO
+ *     consistente (antes: ResponseEntity.notFound().build() a mano, sin
+ *     ningún detalle en el body).
+ *   - Se agrega logging con SLF4J en las operaciones de escritura.
+ *   - Se agregan anotaciones de Swagger/OpenAPI (@Tag, @Operation) para
+ *     que springdoc genere documentación legible en /swagger-ui/index.html
+ *     (dependencia incluida desde el Día 1, recién ahora la usamos).
  */
 @RestController
 @RequestMapping("/api/tareas")
+@Tag(name = "Tareas", description = "CRUD de tareas vía JSON")
 public class TareaRestController {
+
+    private static final Logger log = LoggerFactory.getLogger(TareaRestController.class);
 
     private final TareaService tareaService;
 
@@ -41,15 +46,7 @@ public class TareaRestController {
         this.tareaService = tareaService;
     }
 
-    /**
-     * GET /api/tareas
-     * GET /api/tareas?completada=true
-     *
-     * Devuelve 200 OK con la lista en JSON. Reutiliza el mismo
-     * TareaService.listarFiltradas del Día 6, pasando propietario=null
-     * (por ahora la API muestra las tareas de todos — ver el comentario
-     * de la clase sobre la seguridad pendiente del Día 12).
-     */
+    @Operation(summary = "Listar tareas", description = "Devuelve todas las tareas, opcionalmente filtradas por estado")
     @GetMapping
     public List<TareaResponseDTO> listar(@RequestParam(required = false) Boolean completada) {
         return tareaService.listarFiltradas(completada, null).stream()
@@ -57,61 +54,42 @@ public class TareaRestController {
                 .toList();
     }
 
-    /**
-     * GET /api/tareas/{id}
-     *
-     * 200 OK con la tarea si existe; 404 Not Found si no.
-     * ResponseEntity permite controlar explícitamente el código de
-     * estado HTTP de la respuesta, algo que un método @GetMapping que
-     * solo retorna un DTO no puede hacer por sí mismo.
-     */
+    @Operation(summary = "Detalle de una tarea", description = "Devuelve 404 si el id no existe")
     @GetMapping("/{id}")
-    public ResponseEntity<TareaResponseDTO> detalle(@PathVariable Long id) {
-        return tareaService.buscarPorId(id)
-                .map(tarea -> ResponseEntity.ok(TareaResponseDTO.desde(tarea)))
-                .orElse(ResponseEntity.notFound().build());
+    public TareaResponseDTO detalle(@PathVariable Long id) {
+        Tarea tarea = tareaService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la tarea con id " + id));
+        return TareaResponseDTO.desde(tarea);
     }
 
-    /**
-     * POST /api/tareas
-     * Body (JSON): {"titulo": "Comprar pan", "categoriaId": 1}
-     *
-     * 201 Created con la tarea recién creada. @Valid aplica las mismas
-     * anotaciones de Bean Validation que ya conocemos (Día 5) sobre el
-     * JSON deserializado.
-     */
+    @Operation(summary = "Crear una tarea", description = "Devuelve 201 con la tarea recién creada")
     @PostMapping
     public ResponseEntity<TareaResponseDTO> crear(@Valid @RequestBody TareaRequestDTO body) {
         Tarea creada = tareaService.crearDesdeApi(body.getTitulo(), body.getCategoriaId());
+        log.info("Tarea creada vía API: id={}, titulo=\"{}\"", creada.getId(), creada.getTitulo());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(TareaResponseDTO.desde(creada));
     }
 
-    /**
-     * PUT /api/tareas/{id}
-     * Body (JSON): {"titulo": "Comprar pan integral", "categoriaId": 1}
-     *
-     * 200 OK con la tarea actualizada; 404 Not Found si el id no existe.
-     */
+    @Operation(summary = "Actualizar una tarea", description = "Devuelve 404 si el id no existe")
     @PutMapping("/{id}")
-    public ResponseEntity<TareaResponseDTO> actualizar(@PathVariable Long id,
-                                                        @Valid @RequestBody TareaRequestDTO body) {
-        return tareaService.actualizarDesdeApi(id, body.getTitulo(), body.getCategoriaId())
-                .map(tarea -> ResponseEntity.ok(TareaResponseDTO.desde(tarea)))
-                .orElse(ResponseEntity.notFound().build());
+    public TareaResponseDTO actualizar(@PathVariable Long id, @Valid @RequestBody TareaRequestDTO body) {
+        Tarea actualizada = tareaService.actualizarDesdeApi(id, body.getTitulo(), body.getCategoriaId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la tarea con id " + id));
+        log.info("Tarea actualizada vía API: id={}", id);
+        return TareaResponseDTO.desde(actualizada);
     }
 
-    /**
-     * DELETE /api/tareas/{id}
-     *
-     * 204 No Content si se eliminó; 404 Not Found si no existía.
-     * 204 no lleva body — por eso ResponseEntity<Void>.
-     */
+    @Operation(summary = "Eliminar una tarea", description = "Devuelve 204 si se eliminó, 404 si el id no existía")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         boolean eliminada = tareaService.eliminarDesdeApi(id);
-        return eliminada ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        if (!eliminada) {
+            throw new RecursoNoEncontradoException("No se encontró la tarea con id " + id);
+        }
+        log.info("Tarea eliminada vía API: id={}", id);
+        return ResponseEntity.noContent().build();
     }
 
 }

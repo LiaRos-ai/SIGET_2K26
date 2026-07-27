@@ -8,11 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * "Sistema de Gestión de Tareas" - desarrollado en vivo por el docente
  * durante las 3 semanas del curso, sesión a sesión.
  *
- * Estado actual: Sprint 3 (Día 12) - Seguridad transaccional.
- * @Transactional real (CategoriaService.eliminarConTareas), API
- * protegida con HTTP Basic + sesión STATELESS (SecurityConfig con dos
- * SecurityFilterChain), y notas de seguridad sobre inyección SQL (JPA
- * parametriza todo por diseño) y XSS (th:text escapa automáticamente).
+ * Estado actual: Sprint 3 (Día 13) - Calidad, manejo de errores y pruebas.
+ * Manejo global de excepciones (@ControllerAdvice/@RestControllerAdvice
+ * separados para vistas y API), logging con SLF4J/Logback, pruebas
+ * unitarias con JUnit 5 + Mockito (TareaServiceTest), y documentación
+ * de la API con Swagger/OpenAPI en /swagger-ui/index.html.
  */
 @SpringBootApplication
 public class GestionTareasApplication {

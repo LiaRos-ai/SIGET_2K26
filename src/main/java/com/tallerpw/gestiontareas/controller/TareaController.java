@@ -1,6 +1,7 @@
 package com.tallerpw.gestiontareas.controller;
 
 import com.tallerpw.gestiontareas.dto.TareaFormDTO;
+import com.tallerpw.gestiontareas.exception.RecursoNoEncontradoException;
 import com.tallerpw.gestiontareas.model.Tarea;
 import com.tallerpw.gestiontareas.model.Usuario;
 import com.tallerpw.gestiontareas.service.CategoriaService;
@@ -25,12 +26,16 @@ import java.util.List;
  * Día 7: persistencia real con Spring Data JPA.
  * Día 8: CRUD completo (editar/eliminar).
  * Día 9: /tareas/** requiere estar autenticado (ver SecurityConfig).
+ * Día 10: autorización a nivel de datos (HU-07).
  *
- * Día 10: cada método resuelve primero al Usuario autenticado (a partir
- * del email que devuelve Authentication.getName()) y se lo pasa al
- * Service, que decide qué puede ver o hacer según sea ADMIN o dueño de
- * la tarea (HU-07). Esto es "autorización a nivel de datos", un paso
- * más allá de la autorización a nivel de ruta que ya hace SecurityConfig.
+ * Día 13: los métodos que antes hacían
+ *     .map(...).orElse("tarea-no-encontrada")
+ * ahora hacen
+ *     .orElseThrow(() -> new RecursoNoEncontradoException(...))
+ * y TareaWebExceptionHandler decide, en un solo lugar, qué vista
+ * mostrar. El Controller queda más corto y la decisión de "qué pasa
+ * cuando no se encuentra algo" vive en un solo lugar, no repetida en
+ * cada método.
  */
 @Controller
 public class TareaController {
@@ -53,8 +58,6 @@ public class TareaController {
         Usuario usuarioActual = usuarioActual(authentication);
         boolean esAdmin = "ADMIN".equals(usuarioActual.getRol());
 
-        // ADMIN ve las tareas de todos (propietario = null -> sin filtrar por dueño).
-        // Un usuario normal solo ve las suyas.
         List<Tarea> tareas = tareaService.listarFiltradas(completada, esAdmin ? null : usuarioActual);
 
         model.addAttribute("tareas", tareas);
@@ -66,12 +69,10 @@ public class TareaController {
 
     @GetMapping("/tareas/{id}")
     public String detalle(@PathVariable Long id, Model model) {
-        return tareaService.buscarPorId(id)
-                .map(tarea -> {
-                    model.addAttribute("tarea", tarea);
-                    return "tarea-detalle";
-                })
-                .orElse("tarea-no-encontrada");
+        Tarea tarea = tareaService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la tarea con id " + id));
+        model.addAttribute("tarea", tarea);
+        return "tarea-detalle";
     }
 
     @GetMapping("/tareas/nueva")
@@ -97,19 +98,18 @@ public class TareaController {
 
     @GetMapping("/tareas/{id}/editar")
     public String formularioEditar(@PathVariable Long id, Model model) {
-        return tareaService.buscarPorId(id)
-                .map(tarea -> {
-                    TareaFormDTO formulario = new TareaFormDTO();
-                    formulario.setTitulo(tarea.getTitulo());
-                    formulario.setCategoriaId(tarea.getCategoria() != null ? tarea.getCategoria().getId() : null);
+        Tarea tarea = tareaService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la tarea con id " + id));
 
-                    model.addAttribute("tarea", formulario);
-                    model.addAttribute("categorias", categoriaService.listarTodas());
-                    model.addAttribute("editando", true);
-                    model.addAttribute("tareaId", id);
-                    return "tarea-form";
-                })
-                .orElse("tarea-no-encontrada");
+        TareaFormDTO formulario = new TareaFormDTO();
+        formulario.setTitulo(tarea.getTitulo());
+        formulario.setCategoriaId(tarea.getCategoria() != null ? tarea.getCategoria().getId() : null);
+
+        model.addAttribute("tarea", formulario);
+        model.addAttribute("categorias", categoriaService.listarTodas());
+        model.addAttribute("editando", true);
+        model.addAttribute("tareaId", id);
+        return "tarea-form";
     }
 
     @PostMapping("/tareas/{id}/editar")
@@ -123,9 +123,9 @@ public class TareaController {
             return "tarea-form";
         }
         Usuario usuarioActual = usuarioActual(authentication);
-        return tareaService.actualizarDesdeFormulario(id, formulario.getTitulo(), formulario.getCategoriaId(), usuarioActual)
-                .map(t -> "redirect:/tareas")
-                .orElse("tarea-no-encontrada");
+        tareaService.actualizarDesdeFormulario(id, formulario.getTitulo(), formulario.getCategoriaId(), usuarioActual)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró la tarea con id " + id));
+        return "redirect:/tareas";
     }
 
     @PostMapping("/tareas/{id}/eliminar")

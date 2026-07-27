@@ -3,6 +3,8 @@ package com.tallerpw.gestiontareas.controller;
 import com.tallerpw.gestiontareas.dto.RegistroFormDTO;
 import com.tallerpw.gestiontareas.service.UsuarioService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,9 +20,15 @@ import org.springframework.web.bind.annotation.PostMapping;
  * automáticamente gracias a formLogin().loginPage("/login") configurado
  * en SecurityConfig. Este Controller solo muestra la vista del login
  * (GET) y maneja el registro completo (GET + POST).
+ *
+ * Día 13: se agrega logging — un intento de registro con un email que
+ * ya existe se loguea como warn (alguien podría estar probando qué
+ * cuentas existen); un registro exitoso se loguea como info.
  */
 @Controller
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final UsuarioService usuarioService;
 
@@ -44,8 +52,7 @@ public class AuthController {
     public String registrar(@Valid @ModelAttribute("registro") RegistroFormDTO formulario,
                              BindingResult resultado) {
         if (usuarioService.existeEmail(formulario.getEmail())) {
-            // rejectValue asocia el error puntualmente al campo "email",
-            // para que th:errors="*{email}" lo muestre en el lugar correcto.
+            log.warn("Intento de registro con email ya existente: {}", formulario.getEmail());
             resultado.rejectValue("email", "email.duplicado", "Ya existe una cuenta con ese email");
         }
 
@@ -54,6 +61,7 @@ public class AuthController {
         }
 
         usuarioService.registrar(formulario.getNombre(), formulario.getEmail(), formulario.getPassword());
+        log.info("Nueva cuenta registrada: {}", formulario.getEmail());
         return "redirect:/login?registrado";
     }
 
