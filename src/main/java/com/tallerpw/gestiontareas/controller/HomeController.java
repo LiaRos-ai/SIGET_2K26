@@ -16,7 +16,7 @@ public class HomeController {
     public String inicio(Model model) {
         model.addAttribute("mensaje", "¡Spring Boot está corriendo correctamente!");
         model.addAttribute("proyecto", "Sistema de Gestión de Tareas");
-        model.addAttribute("sprint", "Sprint 2 - Día 10 (cierre)");
+        model.addAttribute("sprint", "Sprint 3 - Día 11");
         return "inicio";
     }
 

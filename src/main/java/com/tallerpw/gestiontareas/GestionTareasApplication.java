@@ -8,10 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * "Sistema de Gestión de Tareas" - desarrollado en vivo por el docente
  * durante las 3 semanas del curso, sesión a sesión.
  *
- * Estado actual: Sprint 2 (Día 10) - Filtros, sesiones y rutas seguras. CIERRE DE SPRINT 2.
- * CSRF habilitado, manejo explícito de sesión (maximumSessions), y
- * autorización a nivel de datos (cada usuario ve/gestiona solo sus
- * tareas, salvo ADMIN que ve todas). HU-07 queda cerrada.
+ * Estado actual: Sprint 3 (Día 11) - API REST con Spring Boot.
+ * Se agregó TareaRestController (@RestController) con el CRUD completo
+ * de tareas en /api/tareas, usando @RequestBody/@ResponseBody, DTOs de
+ * request/response y códigos HTTP explícitos. La API queda abierta a
+ * propósito por ahora (se protege el Día 12).
  */
 @SpringBootApplication
 public class GestionTareasApplication {
