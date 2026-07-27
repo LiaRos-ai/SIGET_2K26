@@ -139,6 +139,38 @@ public class TareaService {
         return tarea.getPropietario() != null && tarea.getPropietario().getId().equals(usuario.getId());
     }
 
+    // ---------------------------------------------------------------
+    // Día 11: métodos para la API REST (TareaRestController).
+    //
+    // OJO: a diferencia de crearDesdeFormulario/actualizarDesdeFormulario,
+    // estos métodos NO reciben un Usuario ni aplican puedeGestionar —
+    // porque /api/tareas todavía no tiene su propia autenticación
+    // (queda abierta a propósito). Es una limitación conocida y
+    // documentada: se cierra el Día 12 ("Seguridad transaccional"),
+    // cuando la API se proteja con su propio mecanismo.
+    // ---------------------------------------------------------------
+
+    public Tarea crearDesdeApi(String titulo, Long categoriaId) {
+        Categoria categoria = resolverCategoria(categoriaId);
+        return crear(titulo, categoria, null);
+    }
+
+    public Optional<Tarea> actualizarDesdeApi(Long id, String titulo, Long categoriaId) {
+        return tareaRepository.findById(id).map(tarea -> {
+            tarea.setTitulo(titulo);
+            tarea.setCategoria(resolverCategoria(categoriaId));
+            return tareaRepository.save(tarea);
+        });
+    }
+
+    public boolean eliminarDesdeApi(Long id) {
+        if (!tareaRepository.existsById(id)) {
+            return false;
+        }
+        tareaRepository.deleteById(id);
+        return true;
+    }
+
     private Categoria resolverCategoria(Long categoriaId) {
         if (categoriaId == null) {
             return null;

@@ -4,32 +4,28 @@ Proyecto**guia** que se desarrolla en vivo, sesión a sesión, durante las 3 sem
 del curso *Programación Web II*. Sirve como espejo técnico de lo que cada estudiante
 debe ir aplicando en su propio proyecto (ver los 5 proyectos propuestos).
 
-## Estado actual: Sprint 2 (Día 10) — Filtros, sesiones y rutas seguras · CIERRE DE SPRINT 2
+## Estado actual: Sprint 3 (Día 11) — API REST con Spring Boot
 
-Novedades del Día 10 respecto del Día 9:
+Novedades del Día 11 respecto del Día 10:
 
-- **CSRF habilitado**: hasta el Día 9, `SecurityConfig` terminaba con
-  `.csrf(csrf -> csrf.disable())`. Ahora ese bloque directamente no
-  aparece, así que Spring Security usa la protección CSRF por defecto
-  (token asociado a la sesión HTTP). Ningún formulario existente
-  necesitó cambios: Thymeleaf inserta el campo oculto automáticamente
-  en cualquier `<form th:action="...">`.
-- **Manejo explícito de sesión**: `sessionCreationPolicy(IF_REQUIRED)`
-  (el valor por defecto, ahora visible en el código) y
-  `maximumSessions(1)` — cada usuario tiene como máximo una sesión
-  activa a la vez.
-- **HU-07 cerrada: autorización a nivel de DATOS.** Se agregó
-  `Tarea.propietario` (Usuario dueño). `GET /tareas` ahora muestra:
-  - Todas las tareas de todos los usuarios, si es ADMIN.
-  - Solo tus propias tareas, si es un usuario normal.
-  - Editar, eliminar y alternar el estado de una tarea ahora verifican
-    la propiedad (`TareaService.puedeGestionar`): un usuario normal solo
-    puede gestionar sus propias tareas; un ADMIN puede gestionar
-    cualquiera.
-- `DataInitializer` se reordenó: ahora crea los usuarios de ejemplo
-  ANTES que las tareas, para poder asignarles un propietario desde el
-  arranque, y usa `obtenerOCrear` para no fallar si ya existen (además
-  de la verificación de email duplicado del Día 9).
+- **Nuevo `TareaRestController`** (`@RestController`, base `/api/tareas`):
+  CRUD completo vía JSON.
+  - `GET /api/tareas` y `GET /api/tareas?completada=true|false`
+  - `GET /api/tareas/{id}` (200 o 404)
+  - `POST /api/tareas` (201, body: `{"titulo": "...", "categoriaId": 1}`)
+  - `PUT /api/tareas/{id}` (200 o 404)
+  - `DELETE /api/tareas/{id}` (204 o 404)
+- **`TareaResponseDTO` y `TareaRequestDTO`** (paquete `dto/`): la API
+  nunca serializa las entidades JPA directamente — el mismo principio
+  de los DTO de formularios (Día 6), aplicado a JSON.
+- **`TareaService` ganó 3 métodos nuevos** (`crearDesdeApi`,
+  `actualizarDesdeApi`, `eliminarDesdeApi`) que, a diferencia de los
+  usados por la capa web, NO aplican la verificación de propietario
+  (`puedeGestionar`) — porque la API todavía no tiene su propio
+  mecanismo de autenticación.
+- **`/api/**` está abierta (`permitAll`) y exenta de CSRF**, a
+  propósito y de forma temporal: protegerla correctamente es el
+  contenido del Día 12.
 
 ## Cómo ejecutar
 
@@ -37,9 +33,16 @@ Novedades del Día 10 respecto del Día 9:
 mvn spring-boot:run
 ```
 
-- Iniciar sesión como `estudiante@tallerpw.com` / `estudiante1234` → `/tareas` muestra solo sus 3 tareas de ejemplo.
-- Iniciar sesión como `admin@tallerpw.com` / `admin1234` → `/tareas` muestra un aviso "viendo las tareas de todos los usuarios" y las lista todas, con el nombre del propietario en cada tarjeta.
-- Probar editar/eliminar una tarea ajena manipulando la URL manualmente (por ejemplo, `/tareas/1/editar` estando logueado con otra cuenta que no sea dueña ni ADMIN) → debería mostrar "tarea no encontrada", no un error.
+Probar con Postman (no requiere login, a diferencia de `/tareas`):
+
+- `GET http://localhost:8080/api/tareas`
+- `GET http://localhost:8080/api/tareas?completada=true`
+- `POST http://localhost:8080/api/tareas` con body JSON:
+  ```json
+  { "titulo": "Probar la API con Postman", "categoriaId": 1 }
+  ```
+- `PUT http://localhost:8080/api/tareas/1` con un body similar.
+- `DELETE http://localhost:8080/api/tareas/1`
 
 ## Configuración de Git (actividad del Día 2)
 
@@ -54,39 +57,30 @@ git push -u origin main
 ```
 
 Convención de commits sugerida para todo el curso: `Sprint X: descripción breve en presente`
-(ej. `Sprint 2: cierra Sprint 2 con CSRF, sesiones y tareas por usuario`).
+(ej. `Sprint 3: agrega API REST de tareas`).
 
-## Product Backlog (actualizado — cierre de Sprint 2, Día 10)
+## Sprint 3 Planning (actividad del Día 11)
+
+Al arrancar el Sprint 3, se define qué entidad del proyecto propio se
+expone como API REST. Para el proyecto guía: la entidad Tarea, ya
+expuesta hoy en `/api/tareas`. Cada equipo debe elegir su entidad
+principal y definir al menos los 5 endpoints estándar (listar, detalle,
+crear, actualizar, eliminar), documentando la forma esperada del JSON de
+entrada y salida (equivalente a TareaRequestDTO/TareaResponseDTO).
+
+## Product Backlog (actualizado — Sprint 3, Día 11)
 
 | # | Historia de usuario | Prioridad | Sprint estimado | Estado |
 |---|---|---|---|---|
-| HU-01 | Página de inicio | Alta | Sprint 0 | Hecho (Día 1) |
-| HU-02 | Listado de tareas responsive | Alta | Sprint 1 | Hecho (Día 3-4) |
-| HU-03 | Crear tarea desde formulario validado | Alta | Sprint 1 | Hecho (Día 5) |
-| HU-04 | Editar y eliminar una tarea existente | Alta | Sprint 2 | Hecho (Día 8) |
-| HU-05 | Persistencia real en base de datos | Alta | Sprint 2 | Hecho (Día 7) |
-| HU-06 | Registro e inicio de sesión | Alta | Sprint 2 | Hecho (Día 9) |
-| HU-07 | Vista de administrador (todas las tareas) | Media | Sprint 2 | **Hecho (Día 10)** |
-| HU-08 | Filtrar tareas por estado | Media | Sprint 2 | Hecho (Día 6) |
-| HU-09 | Endpoint REST de tareas | Alta | Sprint 3 | Backlog (Día 11) |
-| HU-10 | Seguridad transaccional | Alta | Sprint 3 | Backlog (parcial: DTO, contraseñas hasheadas, CSRF, autorización por datos) |
-| HU-11 | Empaquetado y despliegue (JAR) | Alta | Sprint 3 | Backlog |
-
-**Sprint 2 cerrado.** Incremento entregado: entidades JPA y repositorios,
-CRUD completo conectado al frontend, autenticación con Spring Security,
-roles y rutas protegidas (coincide con el incremento planeado para el
-Sprint 2 en el plan de curso).
-
-## Sprint Review y Retrospectiva 2 (actividad del Día 10)
-
-- **Sprint Review:** cada estudiante/equipo muestra su proyecto de práctica
-  corriendo, con login, CRUD completo, y al menos una ruta protegida por rol.
-- **Retrospectiva:** ¿qué funcionó bien esta semana (Días 6-10)? ¿qué fue
-  difícil? ¿qué cambiaríamos para la semana 3 (Sprint 3: API REST y despliegue)?
+| HU-01 a HU-08 | (ver Sprints 0-2) | — | — | Hechas |
+| HU-09 | Endpoint REST de tareas para integraciones externas | Alta | Sprint 3 | Hecho (Día 11) |
+| HU-10 | Seguridad transaccional (incluye proteger la API) | Alta | Sprint 3 | Backlog (Día 12) |
+| HU-11 | Empaquetado y despliegue (JAR) | Alta | Sprint 3 | Backlog (Día 14) |
 
 ## Tablero Scrum/Kanban
 
-Mover HU-07 a "Hecho". Preparar el Sprint 3 Planning (Día 11) con HU-09, HU-10 y HU-11.
+Mover HU-09 a "Hecho". Dejar registrado en el backlog que `/api/tareas`
+todavía no está protegida — esa tarea técnica se resuelve el Día 12.
 
 ## Roles Scrum del curso
 
@@ -95,7 +89,6 @@ Mover HU-07 a "Hecho". Preparar el Sprint 3 Planning (Día 11) con HU-09, HU-10 
 
 ## Próximos hitos
 
-- **Día 11:** Sprint 3 Planning — API REST con Spring Boot
-  (`@RestController`, `@RequestBody`/`@ResponseBody`, serialización JSON,
-  pruebas con Postman).
+- **Día 12:** Seguridad transaccional — `@Transactional`, prevención de
+  inyección SQL/XSS, protección de la API con JWT o Spring Security, HTTPS.
 

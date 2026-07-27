@@ -24,6 +24,14 @@ import org.springframework.security.web.SecurityFilterChain;
  *   - La autorización por ROL a nivel de ruta (/admin/**) se complementa
  *     con autorización a nivel de DATOS en TareaService (HU-07: cada
  *     usuario gestiona solo sus propias tareas, salvo que sea ADMIN).
+ *
+ * Día 11: se agrega /api/** a la lista de rutas públicas (permitAll) Y
+ * se la exime de CSRF. Esto es una decisión TEMPORAL y a propósito, no
+ * un descuido: la API REST recién nace hoy, y protegerla correctamente
+ * (con su propio mecanismo, no con sesión de navegador) es justamente
+ * el contenido del Día 12 ("Seguridad transaccional"). Mientras tanto,
+ * cualquiera puede probar la API libremente desde Postman sin necesidad
+ * de loguearse primero.
  */
 @Configuration
 public class SecurityConfig {
@@ -38,6 +46,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/webjars/**").permitAll()
+                .requestMatchers("/api/**").permitAll() // Día 11: abierta a propósito — se protege el Día 12
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -51,25 +60,22 @@ public class SecurityConfig {
                 .permitAll()
             )
             // Día 10: manejo explícito de sesión.
-            // IF_REQUIRED (el valor por defecto) crea una sesión HTTP recién
-            // cuando hace falta (por ejemplo, al iniciar sesión) — se deja
-            // explícito acá solo para que quede visible en el código.
-            // maximumSessions(1) fuerza que cada usuario tenga como máximo
-            // una sesión activa: si inicia sesión en un segundo navegador,
-            // la primera sesión se invalida automáticamente.
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
-            );
+            )
+            // Día 11: /api/** queda exenta de CSRF. El token CSRF viaja
+            // asociado a la sesión de un navegador con cookies; un cliente
+            // de API típico (Postman, una app externa) no tiene ese
+            // contexto. Las APIs REST convencionalmente se protegen con
+            // otro mecanismo (API keys, JWT — Día 12), no con CSRF.
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
 
-        // Día 10: CSRF HABILITADO. Hasta el Día 9 este bloque terminaba con
-        // .csrf(csrf -> csrf.disable()); ahora, al no llamar a csrf() en
-        // absoluto, Spring Security usa la protección CSRF por defecto
-        // (el token viaja asociado a la sesión HTTP — por eso tiene sentido
-        // verlo el mismo día que el manejo de sesión). Con Thymeleaf,
-        // cualquier <form th:action="..."> ya inserta automáticamente el
-        // campo oculto con el token (integración con RequestDataValueProcessor):
+        // Día 10: CSRF sigue HABILITADO para el resto de la aplicación
+        // (las vistas Thymeleaf). Con Thymeleaf, cualquier
+        // <form th:action="..."> ya inserta automáticamente el campo
+        // oculto con el token (integración con RequestDataValueProcessor):
         // no hace falta tocar ningún formulario existente.
 
         return http.build();
