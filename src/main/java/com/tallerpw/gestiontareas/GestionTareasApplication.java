@@ -8,11 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * "Sistema de Gestión de Tareas" - desarrollado en vivo por el docente
  * durante las 3 semanas del curso, sesión a sesión.
  *
- * Estado actual: Sprint 3 (Día 11) - API REST con Spring Boot.
- * Se agregó TareaRestController (@RestController) con el CRUD completo
- * de tareas en /api/tareas, usando @RequestBody/@ResponseBody, DTOs de
- * request/response y códigos HTTP explícitos. La API queda abierta a
- * propósito por ahora (se protege el Día 12).
+ * Estado actual: Sprint 3 (Día 12) - Seguridad transaccional.
+ * @Transactional real (CategoriaService.eliminarConTareas), API
+ * protegida con HTTP Basic + sesión STATELESS (SecurityConfig con dos
+ * SecurityFilterChain), y notas de seguridad sobre inyección SQL (JPA
+ * parametriza todo por diseño) y XSS (th:text escapa automáticamente).
  */
 @SpringBootApplication
 public class GestionTareasApplication {

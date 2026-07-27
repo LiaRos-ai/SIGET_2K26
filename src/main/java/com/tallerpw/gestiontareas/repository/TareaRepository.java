@@ -22,6 +22,20 @@ import java.util.List;
  * Día 10: se agregan los query methods con "Propietario" para poder
  * filtrar el listado por dueño (HU-07: cada usuario ve solo sus tareas,
  * salvo que sea ADMIN).
+ *
+ * Día 12: findByCategoriaId navega la relación anidada
+ * Tarea.categoria.id — Spring Data JPA entiende "CategoriaId" como
+ * "la propiedad id del objeto categoria", sin necesidad de escribir
+ * ninguna consulta JPQL a mano.
+ */
+ /* Día 12: nota de seguridad — ninguno de estos query methods (ni
+ * JpaRepository en general) es vulnerable a inyección SQL. Spring Data
+ * JPA SIEMPRE genera consultas parametrizadas por debajo (con
+ * placeholders "?", nunca concatenando el valor recibido directo en el
+ * texto de la consulta), sin importar qué le pasemos como argumento.
+ * Esto es válido tanto para estos query methods como para JPQL/HQL
+ * escrito a mano con @Query, siempre que se usen parámetros
+ * (:parametro o ?1) en vez de concatenar Strings.
  */
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
 
@@ -30,5 +44,7 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
     List<Tarea> findByPropietario(Usuario propietario);
 
     List<Tarea> findByPropietarioAndCompletada(Usuario propietario, boolean completada);
+
+    List<Tarea> findByCategoriaId(Long categoriaId);
 
 }
