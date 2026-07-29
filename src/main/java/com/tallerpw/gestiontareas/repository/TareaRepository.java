@@ -28,7 +28,7 @@ import java.util.List;
  * "la propiedad id del objeto categoria", sin necesidad de escribir
  * ninguna consulta JPQL a mano.
  */
- /* Día 12: nota de seguridad — ninguno de estos query methods (ni
+ /**Día 12: nota de seguridad — ninguno de estos query methods (ni
  * JpaRepository en general) es vulnerable a inyección SQL. Spring Data
  * JPA SIEMPRE genera consultas parametrizadas por debajo (con
  * placeholders "?", nunca concatenando el valor recibido directo en el

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Red de seguridad para CUALQUIER excepción no controlada que se escape
@@ -23,16 +22,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalWebExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalWebExceptionHandler.class);
-
-    /**
-     * Ignora NoResourceFoundException (favicon, robots.txt, etc. que
-     * el navegador solicita automáticamente pero no son errores reales).
-     * Spring Boot ya retorna 404 correctamente, no es necesario loguear.
-     */
-    @ExceptionHandler(NoResourceFoundException.class)
-    public void manejarNoResourceFound(NoResourceFoundException ex) {
-        // Silenciosamente ignorado — Spring Boot ya retorna 404
-    }
 
     @ExceptionHandler(Exception.class)
     public String manejarErrorInesperado(Exception ex, Model model) {

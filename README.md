@@ -4,48 +4,70 @@ Proyecto**guia** que se desarrolla en vivo, sesión a sesión, durante las 3 sem
 del curso *Programación Web II*. Sirve como espejo técnico de lo que cada estudiante
 debe ir aplicando en su propio proyecto (ver los 5 proyectos propuestos).
 
-## Estado actual: Sprint 3 (Día 13) — Calidad, manejo de errores y pruebas
+## Estado actual: Sprint 3 (Día 14) — Empaquetado y despliegue
 
-Novedades del Día 13 respecto del Día 12:
+Novedades del Día 14 respecto del Día 13:
 
-- **Manejo global de excepciones**, separado por tipo de respuesta:
-  - `RecursoNoEncontradoException` (paquete `exception/`): reemplaza los
-    `.map(...).orElse("tarea-no-encontrada")` y
-    `ResponseEntity.notFound().build()` repetidos en varios métodos.
-  - `TareaWebExceptionHandler` (`@ControllerAdvice(assignableTypes = TareaController.class)`):
-    la captura para las vistas y muestra `tarea-no-encontrada.html`.
-  - `ApiExceptionHandler` (`@RestControllerAdvice(assignableTypes = TareaRestController.class)`):
-    la captura para la API y devuelve un `ErrorResponseDTO` con 404. También
-    centraliza `MethodArgumentNotValidException` (errores de `@Valid` en
-    JSON) con 400, y cualquier otra excepción no prevista con 500.
-  - `GlobalWebExceptionHandler` (`@ControllerAdvice` sin restricción): red
-    de seguridad para cualquier error inesperado en cualquier `@Controller`,
-    muestra `error.html` con un mensaje genérico (nunca un stack trace).
-- **Logging con SLF4J** agregado en `TareaService`, `AuthController` y
-  los `ExceptionHandler` (`log.info` para operaciones exitosas, `log.warn`
-  para intentos sin permiso o datos duplicados, `log.error` para fallas
-  reales). `application.properties` ahora define un patrón de log
-  explícito y vuelca una copia a `logs/gestion-tareas.log`.
-- **Pruebas unitarias con JUnit 5 + Mockito**: `TareaServiceTest`
-  (`src/test/java`), con `@Mock`/`@InjectMocks` sobre `TareaRepository`
-  y `CategoriaService`, cubriendo creación, permisos (dueño/ADMIN/sin
-  permiso) y casos de "no existe".
-- **Documentación con Swagger/OpenAPI**: `OpenApiConfig` agrega título y
-  descripción; `TareaRestController` suma `@Tag`/`@Operation`. La
-  dependencia `springdoc-openapi-starter-webmvc-ui` estaba en el
-  `pom.xml` desde el Día 1 — hoy se usa por primera vez.
+- **`application.properties` se dividió en perfiles**:
+  - `application.properties`: solo lo que es igual en cualquier entorno
+    (puerto, Thymeleaf, patrón de logging) + `spring.profiles.active=dev`.
+  - `application-dev.properties`: conexión a MySQL local, `ddl-auto=update`,
+    `show-sql=true`, logging detallado — para programar cómodo.
+  - `application-prod.properties`: credenciales desde variables de entorno
+    (`${DB_URL}`, `${DB_USERNAME}`, `${DB_PASSWORD}`), `ddl-auto=validate`
+    (Hibernate nunca modifica el esquema solo en producción), `show-sql=false`,
+    logging más silencioso.
+- **`Dockerfile`** (build multi-etapa): compila con Maven en una imagen,
+  y copia solo el `.jar` resultante a una imagen final liviana con JRE
+  (sin Maven ni código fuente en la imagen que se despliega).
+- **`docker-compose.yml`**: levanta la aplicación Y una base de datos
+  MySQL juntas, ya conectadas, con una sola línea (`docker compose up`).
+- **`.dockerignore`**: evita copiar `target/`, `.git/`, logs, etc. dentro
+  de la imagen — build más rápido y liviano.
 
-## Cómo ejecutar
+## Cómo ejecutar (desarrollo local, sin Docker)
 
 ```bash
 mvn spring-boot:run
 ```
 
-- `http://localhost:8080/swagger-ui/index.html` → documentación interactiva de la API (pública, sin login).
-- `http://localhost:8080/tareas/99999` → ya no revienta con un error genérico: muestra "tarea no encontrada".
-- `http://localhost:8080/api/tareas/99999` (con Basic Auth) → 404 con un JSON `{"status":404,"mensaje":"..."}`.
-- `mvn test` → corre `TareaServiceTest` (no requiere base de datos: todo está mockeado).
-- Revisar `logs/gestion-tareas.log` después de correr la app, para ver el archivo de log generado.
+Usa el perfil `dev` por defecto — sin cambios respecto a los días anteriores.
+
+## Cómo empaquetar como JAR ejecutable
+
+```bash
+mvn clean package
+java -jar target/gestion-tareas.jar
+```
+
+Para correrlo con el perfil de producción (necesita las variables de entorno
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` ya definidas):
+
+```bash
+SPRING_PROFILES_ACTIVE=prod java -jar target/gestion-tareas.jar
+```
+
+## Cómo desplegar con Docker
+
+```bash
+docker compose up --build
+```
+
+Esto levanta MySQL y la aplicación juntos. La app queda en `http://localhost:8080`,
+usando el perfil `prod` (definido en `docker-compose.yml`).
+
+Para construir solo la imagen de la aplicación (sin docker-compose, con una
+base de datos externa ya existente):
+
+```bash
+docker build -t gestion-tareas .
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DB_URL=jdbc:mysql://mi-servidor:3306/gestion_tareas \
+  -e DB_USERNAME=mi_usuario \
+  -e DB_PASSWORD=mi_clave \
+  gestion-tareas
+```
 
 ## Configuración de Git (actividad del Día 2)
 
@@ -60,29 +82,36 @@ git push -u origin main
 ```
 
 Convención de commits sugerida para todo el curso: `Sprint X: descripción breve en presente`
-(ej. `Sprint 3: centraliza el manejo de errores y agrega pruebas unitarias`).
+(ej. `Sprint 3: agrega perfiles de configuración y despliegue con Docker`).
 
-## HTTPS (nota conceptual, sin cambios de código)
+## Preparación de la sustentación final (actividad del Día 14)
 
-En desarrollo local no configuramos HTTPS: alcanza con `http://localhost`.
-En un despliegue real, HTTPS es indispensable. Dos formas típicas de
-habilitarlo: certificado directo en Spring Boot (`server.ssl.*`) o
-delegado a un proxy inverso (Nginx, balanceador del hosting) — el
-enfoque que se retoma en el Día 14 (despliegue).
+El Día 15 cada equipo presenta su proyecto propio. Antes de esa clase, cada
+equipo debería tener listo (ver también el documento "Checklist de
+Sustentación Final"):
 
-## Product Backlog (actualizado — Sprint 3, Día 13)
+- El proyecto empaquetado (`mvn package`) sin errores.
+- Una cuenta de prueba de cada rol (USER y ADMIN) para mostrar en vivo.
+- Los 5 endpoints REST de su entidad principal, probados en Postman.
+- El repositorio Git actualizado, con un README propio.
+- Un recorrido de 5-7 minutos planeado: qué se muestra, en qué orden, quién
+  habla en el equipo.
+
+## Product Backlog (actualizado — Sprint 3, Día 14)
 
 | # | Historia de usuario | Prioridad | Sprint estimado | Estado |
 |---|---|---|---|---|
 | HU-09 | Endpoint REST de tareas | Alta | Sprint 3 | Hecho (Día 11) |
 | HU-10 | Seguridad transaccional | Alta | Sprint 3 | Hecho (Día 12) |
-| HU-11 | Empaquetado y despliegue (JAR) | Alta | Sprint 3 | Backlog (Día 14) |
-| (técnica) | Manejo de errores, logging, pruebas, documentación de API | Alta | Sprint 3 | **Hecho (Día 13)** |
+| HU-11 | Empaquetado y despliegue (JAR) | Alta | Sprint 3 | **Hecho (Día 14)** |
+
+**Sprint 3 casi cerrado.** Falta la integración final y la sustentación
+del Día 15.
 
 ## Tablero Scrum/Kanban
 
-Agregar la tarea técnica del Día 13 como "Hecho". Preparar HU-11
-(empaquetado y despliegue) para el Día 14.
+Mover HU-11 a "Hecho". El tablero debería estar prácticamente vacío de
+pendientes antes del Día 15 (Integración final).
 
 ## Roles Scrum del curso
 
@@ -91,6 +120,7 @@ Agregar la tarea técnica del Día 13 como "Hecho". Preparar HU-11
 
 ## Próximos hitos
 
-- **Día 14:** Empaquetado con Maven (`mvn package`) a JAR ejecutable,
-  variables de entorno por perfil (`application-prod.properties`),
-  despliegue en servidor o contenedor Docker.
+- **Día 15:** Integración final de todos los módulos (Thymeleaf + REST +
+  seguridad + BD), Sprint Review y Retrospectiva final, Evaluación
+  semanal 3 / evaluación de promoción, sustentación de los 5 proyectos
+  de estudiantes.
