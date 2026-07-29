@@ -8,11 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * "Sistema de Gestión de Tareas" - desarrollado en vivo por el docente
  * durante las 3 semanas del curso, sesión a sesión.
  *
- * Estado actual: Sprint 3 (Día 13) - Calidad, manejo de errores y pruebas.
- * Manejo global de excepciones (@ControllerAdvice/@RestControllerAdvice
- * separados para vistas y API), logging con SLF4J/Logback, pruebas
- * unitarias con JUnit 5 + Mockito (TareaServiceTest), y documentación
- * de la API con Swagger/OpenAPI en /swagger-ui/index.html.
+ * Estado actual: Sprint 3 (Día 14) - Empaquetado y despliegue.
+ * application.properties se dividió en perfiles (dev/prod), con
+ * Dockerfile multi-etapa y docker-compose.yml (app + MySQL) listos
+ * para desplegar el mismo JAR generado con "mvn package".
  */
 @SpringBootApplication
 public class GestionTareasApplication {

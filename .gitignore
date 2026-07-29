@@ -24,3 +24,4 @@ bin/
 ### Otros ###
 .DS_Store
 *.log
+logs/
